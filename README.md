@@ -92,10 +92,15 @@ Key CSS variables:
 - `--font-sub`: `'Space Grotesk'`
 - `--font-mono`: `'Space Mono'`
 
-### 5. Connecting a Real Form or Backend
-The waitlist forms in `ProductModal.jsx` and `Newsletter.jsx` save to `localStorage` in this prototype. To connect a live backend without paying for servers:
-- **Formspree**: Replace the `onSubmit` handler with a Formspree endpoint POST request.
-- **Google Sheets**: Send a `fetch()` POST to a free Google Apps Script web app URL.
+### 6. YouTube Sound Deck & Playlist Setup
+The persistent sound dock at the bottom is powered by the YouTube IFrame API and supports:
+- Curated genre channels: **The Void** (darkwave/grunge/post-punk), **The Feed** (hyperpop/breakcore), and **Subterranean Radio** (lo-fi tape beats).
+- **Random song rolling** per genre via the 🎲 button or continuous shuffle mode.
+- Single YouTube songs or entire YouTube playlists (`PL...` links).
+
+To add songs or playlists:
+1. **Via Code**: Open [`src/data/musicTracks.js`](file:///home/ranbeer/ODDFrequency/src/data/musicTracks.js) and add items to `DEFAULT_TRACKS` using any YouTube link or ID.
+2. **Via Website UI**: Click the **TRACKS** button in the bottom dock, go to **[03] + ADD YOUTUBE SONG / PLAYLIST**, paste any YouTube link, and click Add. You can also click "Copy Code Snippet" to copy your added tracks straight into code!
 
 ---
 
@@ -103,3 +108,4 @@ The waitlist forms in `ProductModal.jsx` and `Newsletter.jsx` save to `localStor
 
 Created as an independent concept prototype for Odd Frequency.  
 *Clothes for the beautifully out of sync.*
+
