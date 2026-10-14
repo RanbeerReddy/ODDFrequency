@@ -1,9 +1,9 @@
 /**
- * Odd Frequency - Ambient Audio Engine
+ * Odd Frequency - Ambient & Radio Multi-Channel Audio Engine
  * 
- * Generates an underground lo-fi ambient tape-loop soundscape using the Web Audio API.
+ * Generates interactive subterranean synthesized audio in the browser via Web Audio API.
  * 100% royalty-free, permission-safe, zero external network requests required.
- * Also supports switching to an external audio URL (e.g. user-provided MP3).
+ * Supports multiple stations: House, Electro, Grunge, Metal, Lo-Fi Drone.
  */
 
 class AmbientAudioEngine {
@@ -11,13 +11,11 @@ class AmbientAudioEngine {
     this.ctx = null;
     this.isPlaying = false;
     this.masterGain = null;
-    this.volume = 0.6;
+    this.volume = 0.55;
     this.isMuted = false;
-    this.oscillators = [];
-    this.filter = null;
-    this.lfo = null;
-    this.customAudio = null;
-    this.customAudioUrl = null; // Can be set to a custom MP3 URL by user
+    this.currentStationId = 'house';
+    this.loopTimer = null;
+    this.activeNodes = [];
   }
 
   initContext() {
@@ -35,106 +33,313 @@ class AmbientAudioEngine {
     }
   }
 
-  start() {
-    if (this.isPlaying) return;
+  setStation(stationId) {
+    this.currentStationId = stationId;
+    if (this.isPlaying) {
+      this.stop();
+      this.start(stationId);
+    }
+  }
+
+  start(stationId = this.currentStationId) {
+    this.currentStationId = stationId;
     this.initContext();
     if (!this.ctx) return;
+    this.stopActiveRhythms();
 
-    if (this.customAudioUrl) {
-      if (!this.customAudio) {
-        this.customAudio = new Audio(this.customAudioUrl);
-        this.customAudio.loop = true;
-      }
-      this.customAudio.volume = this.isMuted ? 0 : this.volume;
-      this.customAudio.play().catch(() => {});
-      this.isPlaying = true;
-      return;
-    }
-
-    // Build synthesized lo-fi subterranean drone
     const now = this.ctx.currentTime;
-    this.oscillators = [];
+    this.isPlaying = true;
 
-    // Filter to give warm, tape-saturated dark character
-    this.filter = this.ctx.createBiquadFilter();
-    this.filter.type = 'lowpass';
-    this.filter.frequency.setValueAtTime(420, now);
-    this.filter.Q.setValueAtTime(3.2, now);
-    this.filter.connect(this.masterGain);
+    if (stationId === 'house') {
+      this.startHouseBeat();
+    } else if (stationId === 'brat') {
+      this.startElectroBeat();
+    } else if (stationId === 'grunge') {
+      this.startGrungeDrone();
+    } else if (stationId === 'metal') {
+      this.startMetalWave();
+    } else {
+      this.startAmbientDrone();
+    }
+  }
 
-    // Minor triad drone frequencies (A2, C3, E3, A3 sub-harmonics)
+  // Station 1: House (124 BPM 4-on-the-floor kick + chord stab)
+  startHouseBeat() {
+    const bpm = 124;
+    const beatInterval = 60 / bpm; // ~0.484 seconds
+    let step = 0;
+
+    const tick = () => {
+      if (!this.isPlaying || this.currentStationId !== 'house') return;
+      const t = this.ctx.currentTime;
+
+      // 4/4 Kick drum
+      this.playKick(t);
+
+      // Offbeat hi-hat on every odd half-beat
+      setTimeout(() => {
+        if (!this.isPlaying || this.currentStationId !== 'house') return;
+        this.playHiHat(this.ctx.currentTime);
+      }, (beatInterval * 500));
+
+      // Deep minor house chord stab on bar start & step 2
+      if (step % 4 === 0 || step % 4 === 2) {
+        this.playChord(t, [130.81, 155.56, 196.00], 0.22); // C minor
+      }
+
+      step++;
+      this.loopTimer = setTimeout(tick, beatInterval * 1000);
+    };
+
+    tick();
+  }
+
+  // Station 2: Brat Summer Club / Electro (130 BPM pumping bass)
+  startElectroBeat() {
+    const bpm = 130;
+    const beatInterval = 60 / bpm;
+    let step = 0;
+
+    const tick = () => {
+      if (!this.isPlaying || this.currentStationId !== 'brat') return;
+      const t = this.ctx.currentTime;
+
+      this.playKick(t, 110, 0.28);
+
+      // Pumping electro bass notes
+      const bassNotes = [55, 55, 65.4, 73.4, 55, 82.4, 73.4, 65.4];
+      const note = bassNotes[step % bassNotes.length];
+      this.playBassSynth(t, note, beatInterval * 0.7);
+
+      this.playHiHat(t + (beatInterval * 0.5));
+
+      step++;
+      this.loopTimer = setTimeout(tick, beatInterval * 1000);
+    };
+
+    tick();
+  }
+
+  // Station 3: Grunge / Alt-Rock Drone (Seattle tape saturation)
+  startGrungeDrone() {
+    const now = this.ctx.currentTime;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(650, now);
+    filter.Q.setValueAtTime(4.0, now);
+    filter.connect(this.masterGain);
+
+    // Grunge Drop-D minor chord (D2, A2, D3, F3)
+    const notes = [73.42, 110.0, 146.83, 174.61];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const oscGain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq + (Math.sin(idx) * 0.6), now);
+
+      oscGain.gain.setValueAtTime(0.001, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.08, now + 1.5);
+
+      osc.connect(oscGain);
+      oscGain.connect(filter);
+      osc.start();
+      this.activeNodes.push({ osc, gain: oscGain });
+    });
+  }
+
+  // Station 4: Nu-Metal Industrial Wave
+  startMetalWave() {
+    const bpm = 135;
+    const interval = 60 / bpm;
+    let step = 0;
+
+    const tick = () => {
+      if (!this.isPlaying || this.currentStationId !== 'metal') return;
+      const t = this.ctx.currentTime;
+
+      // Heavy industrial double punch
+      this.playKick(t, 90, 0.35);
+      if (step % 2 === 1) {
+        this.playKick(t + 0.12, 100, 0.25);
+      }
+
+      // Distorted industrial metallic strike
+      this.playMetalClang(t + (interval * 0.5));
+
+      step++;
+      this.loopTimer = setTimeout(tick, interval * 1000);
+    };
+
+    tick();
+  }
+
+  // Station 5: Ambient Lo-Fi Drone
+  startAmbientDrone() {
+    const now = this.ctx.currentTime;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, now);
+    filter.Q.setValueAtTime(2.5, now);
+    filter.connect(this.masterGain);
+
     const notes = [110.0, 130.81, 164.81, 220.0];
-
     notes.forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
       const oscGain = this.ctx.createGain();
 
       osc.type = idx === 0 ? 'sine' : 'triangle';
-      // Slight detune for analog warmth
-      osc.frequency.setValueAtTime(freq + (Math.sin(idx) * 0.8), now);
+      osc.frequency.setValueAtTime(freq + (Math.sin(idx) * 0.4), now);
 
-      // Low gain so mix is subtle and relaxing
       const baseGain = idx === 0 ? 0.22 : 0.08;
       oscGain.gain.setValueAtTime(0.001, now);
       oscGain.gain.exponentialRampToValueAtTime(baseGain, now + 1.2);
 
       osc.connect(oscGain);
-      oscGain.connect(this.filter);
+      oscGain.connect(filter);
       osc.start();
-      this.oscillators.push({ osc, gain: oscGain });
+      this.activeNodes.push({ osc, gain: oscGain });
     });
+  }
 
-    // LFO subtle filter sweep
-    this.lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
-    this.lfo.frequency.setValueAtTime(0.12, now); // Very slow breathing wave
-    lfoGain.gain.setValueAtTime(140, now);
-    this.lfo.connect(lfoGain);
-    lfoGain.connect(this.filter.frequency);
-    this.lfo.start();
+  // Sound generator helpers
+  playKick(time, startFreq = 140, duration = 0.28) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-    this.isPlaying = true;
+    osc.frequency.setValueAtTime(startFreq, time);
+    osc.frequency.exponentialRampToValueAtTime(42, time + duration);
+
+    gain.gain.setValueAtTime(0.65, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + duration);
+  }
+
+  playHiHat(time) {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 0.04;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 7500;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.12, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+
+    noise.start(time);
+  }
+
+  playChord(time, freqs, duration = 0.3) {
+    if (!this.ctx) return;
+    freqs.forEach(freq => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, time);
+      filter.frequency.exponentialRampToValueAtTime(300, time + duration);
+
+      gain.gain.setValueAtTime(0.14, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    });
+  }
+
+  playBassSynth(time, freq, duration) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, time);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1400, time);
+    filter.frequency.exponentialRampToValueAtTime(200, time + duration);
+
+    gain.gain.setValueAtTime(0.24, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + duration);
+  }
+
+  playMetalClang(time) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(380, time);
+
+    gain.gain.setValueAtTime(0.15, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + 0.15);
+  }
+
+  stopActiveRhythms() {
+    if (this.loopTimer) {
+      clearTimeout(this.loopTimer);
+      this.loopTimer = null;
+    }
+    if (this.activeNodes.length) {
+      const now = this.ctx ? this.ctx.currentTime : 0;
+      this.activeNodes.forEach(({ osc, gain }) => {
+        try {
+          gain.gain.setValueAtTime(gain.gain.value, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+          setTimeout(() => {
+            try { osc.stop(); osc.disconnect(); } catch (e) {}
+          }, 350);
+        } catch (e) {}
+      });
+      this.activeNodes = [];
+    }
   }
 
   stop() {
-    if (!this.isPlaying) return;
-
-    if (this.customAudio) {
-      this.customAudio.pause();
-      this.isPlaying = false;
-      return;
-    }
-
-    if (this.ctx && this.oscillators.length) {
-      const now = this.ctx.currentTime;
-      this.oscillators.forEach(({ osc, gain }) => {
-        try {
-          gain.gain.setValueAtTime(gain.gain.value, now);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-          setTimeout(() => {
-            try { osc.stop(); osc.disconnect(); } catch (e) {}
-          }, 600);
-        } catch (e) {}
-      });
-      this.oscillators = [];
-    }
-
-    if (this.lfo) {
-      try {
-        this.lfo.stop();
-        this.lfo.disconnect();
-      } catch (e) {}
-      this.lfo = null;
-    }
-
+    this.stopActiveRhythms();
     this.isPlaying = false;
   }
 
   setVolume(val) {
     this.volume = Math.max(0, Math.min(1, val));
-    if (this.customAudio) {
-      this.customAudio.volume = this.isMuted ? 0 : this.volume;
-    }
     if (this.masterGain && this.ctx) {
       const now = this.ctx.currentTime;
       this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.volume, now);
