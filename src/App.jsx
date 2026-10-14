@@ -3,6 +3,8 @@ import Navbar from './components/Navbar.jsx';
 import Hero from './components/Hero.jsx';
 import CollectionCards from './components/CollectionCards.jsx';
 import CollectionPage from './components/CollectionPage.jsx';
+import ArtPage from './components/ArtPage.jsx';
+import MusicPage from './components/MusicPage.jsx';
 import ProductModal from './components/ProductModal.jsx';
 import ProductCard from './components/ProductCard.jsx';
 import VoteArena from './components/VoteArena.jsx';
@@ -16,7 +18,7 @@ import { PRODUCTS } from './data/products.js';
 import { DROP_CONCEPTS } from './data/concepts.js';
 
 export default function App() {
-  const [activeView, setActiveView] = useState('home'); // 'home', 'void', 'feed', 'all', 'manifesto'
+  const [activeView, setActiveView] = useState('home'); // 'home', 'apparel', 'band', 'meme', 'ringer', 'art', 'music', 'manifesto'
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toasts, setToasts] = useState([]);
 
@@ -69,9 +71,9 @@ export default function App() {
 
   // Sync theme attribute to document body for contextual aesthetic styling
   useEffect(() => {
-    if (activeView === 'void') {
+    if (activeView === 'band' || activeView === 'void') {
       document.documentElement.setAttribute('data-theme', 'void');
-    } else if (activeView === 'feed') {
+    } else if (activeView === 'meme' || activeView === 'feed') {
       document.documentElement.setAttribute('data-theme', 'feed');
     } else {
       document.documentElement.removeAttribute('data-theme');
@@ -181,14 +183,16 @@ export default function App() {
         {activeView === 'home' && (
           <>
             <Hero 
-              onExploreVoid={() => setActiveView('void')}
-              onExploreFeed={() => setActiveView('feed')}
+              onExploreApparel={() => setActiveView('apparel')}
+              onExploreArt={() => setActiveView('art')}
+              onExploreMusic={() => setActiveView('music')}
               onOpenArena={handleOpenArena}
             />
 
             <CollectionCards 
-              onSelectVoid={() => setActiveView('void')}
-              onSelectFeed={() => setActiveView('feed')}
+              onSelectApparel={() => setActiveView('apparel')}
+              onSelectArt={() => setActiveView('art')}
+              onSelectMusic={() => setActiveView('music')}
             />
 
             {/* Featured Selection Preview */}
@@ -210,11 +214,11 @@ export default function App() {
                   </p>
                 </div>
                 <button 
-                  onClick={() => setActiveView('all')}
+                  onClick={() => setActiveView('apparel')}
                   className="font-mono"
-                  style={{ fontSize: '0.78rem', color: 'var(--text-primary)', textDecoration: 'underline' }}
+                  style={{ fontSize: '0.78rem', color: 'var(--accent-purple)', textDecoration: 'underline' }}
                 >
-                  VIEW ALL PIECES &rarr;
+                  VIEW ALL {PRODUCTS.length} PIECES &rarr;
                 </button>
               </div>
 
@@ -241,8 +245,8 @@ export default function App() {
 
             {/* Brand Manifesto */}
             <Manifesto 
-              onExploreVoid={() => setActiveView('void')}
-              onExploreFeed={() => setActiveView('feed')}
+              onExploreVoid={() => setActiveView('band')}
+              onExploreFeed={() => setActiveView('meme')}
             />
 
             {/* First Frequency Waitlist */}
@@ -250,10 +254,10 @@ export default function App() {
           </>
         )}
 
-        {(activeView === 'void' || activeView === 'feed' || activeView === 'all') && (
+        {(activeView === 'apparel' || activeView === 'band' || activeView === 'meme' || activeView === 'ringer' || activeView === 'void' || activeView === 'feed' || activeView === 'all') && (
           <>
             <CollectionPage 
-              collectionKey={activeView}
+              collectionKey={activeView === 'apparel' ? 'all' : activeView}
               onSwitchCollection={setActiveView}
               products={PRODUCTS}
               onSelectProduct={setSelectedProduct}
@@ -273,11 +277,38 @@ export default function App() {
           </>
         )}
 
+        {activeView === 'art' && (
+          <>
+            <ArtPage 
+              onSelectPrintProposal={() => setActiveView('apparel')}
+              onOpenArena={handleOpenArena}
+            />
+            <VoteArena 
+              votedConceptIds={votedConceptIds}
+              conceptVotes={conceptVotes}
+              onVoteConcept={handleVoteConcept}
+            />
+            <Newsletter onRegisterEmail={handleRegisterNewsletter} />
+          </>
+        )}
+
+        {activeView === 'music' && (
+          <>
+            <MusicPage />
+            <VoteArena 
+              votedConceptIds={votedConceptIds}
+              conceptVotes={conceptVotes}
+              onVoteConcept={handleVoteConcept}
+            />
+            <Newsletter onRegisterEmail={handleRegisterNewsletter} />
+          </>
+        )}
+
         {activeView === 'manifesto' && (
           <>
             <Manifesto 
-              onExploreVoid={() => setActiveView('void')}
-              onExploreFeed={() => setActiveView('feed')}
+              onExploreVoid={() => setActiveView('band')}
+              onExploreFeed={() => setActiveView('meme')}
             />
             <VoteArena 
               votedConceptIds={votedConceptIds}
@@ -301,7 +332,7 @@ export default function App() {
         />
       )}
 
-      {/* Persistent Audio Player */}
+      {/* Persistent Skeuomorphic Cyber Radio Player Deck */}
       <AudioPlayer />
 
       {/* Site Footer */}

@@ -3,7 +3,7 @@ import ProductCard from './ProductCard.jsx';
 import { CATEGORIES } from '../data/products.js';
 
 export default function CollectionPage({ 
-  collectionKey, // 'void', 'feed', or 'all'
+  collectionKey = 'all', // 'all', 'band', 'grunge', 'ringer', 'meme', 'void', 'feed'
   onSwitchCollection,
   products,
   onSelectProduct,
@@ -15,26 +15,34 @@ export default function CollectionPage({
   const [sortBy, setSortBy] = useState('featured'); // 'featured', 'voted', 'price-asc', 'price-desc'
 
   const collectionMeta = useMemo(() => {
-    if (collectionKey === 'void') {
+    if (collectionKey === 'band') {
       return {
-        title: 'THE VOID',
-        subtitle: 'DISTORTION // UNDERGROUND HEAVYWEAR',
-        description: 'Dark alternative, goth, metal-inspired, grunge and underground fashion. Distressed 280-380 GSM loopback cottons, cyber-sigilism typography, and raw frayed seams designed for subcultural resonance.',
-        accent: 'void'
+        title: 'VINTAGE BAND TEES',
+        subtitle: 'CONCERT ARCHIVE // 70s-90s ROCK & METAL',
+        description: 'Authentic tour tees inspired by Slipknot, Black Sabbath, Led Zeppelin, Metallica, and Nirvana. Heavyweight mineral stonewash with cracked discharge prints.',
+        accent: 'band'
       };
     }
-    if (collectionKey === 'feed') {
+    if (collectionKey === 'meme') {
       return {
-        title: 'THE FEED',
-        subtitle: 'CHRONICALLY ONLINE // IRONIC GRAPHICS',
-        description: 'Ironic graphic tees, baby tees, niche internet humour, absurd slogans and playful Gen-Z fashion. Direct-flash aesthetic, contrast ringers, and hyperstition pixel graphics.',
-        accent: 'feed'
+        title: 'POP & MEME AESTHETIC',
+        subtitle: 'BRAT SUMMER // HYPER-IRONY',
+        description: 'Iconic Charli brat summer neon minimalist shirts, retro sci-fi parodies, and internet counterculture statement garments.',
+        accent: 'meme'
+      };
+    }
+    if (collectionKey === 'ringer') {
+      return {
+        title: 'RINGER & BABY TEES',
+        subtitle: '90s HERITAGE // CONTRAST TRIMS',
+        description: 'Vintage unbleached natural cotton with rich contrast ribbing and cropped baby tee silhouettes for effortless post-punk nostalgia.',
+        accent: 'ringer'
       };
     }
     return {
-      title: 'ALL EXPERIMENTS',
-      subtitle: 'THE FULL CONVERGENCE',
-      description: 'The complete dual-catalogue of Odd Frequency. Vote on designs to determine which pieces graduate from prototype to physical manufacturing run in India.',
+      title: 'APPAREL COLLECTION',
+      subtitle: 'VINTAGE BAND, GRUNGE & CULT TEES',
+      description: 'The complete 12-piece wardrobe prototype of Odd Frequency. Vote on designs to determine which pieces graduate from prototype to physical manufacturing in India.',
       accent: 'all'
     };
   }, [collectionKey]);
@@ -42,9 +50,13 @@ export default function CollectionPage({
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
     let list = products.filter(p => {
-      // Collection filter
+      // Style / Collection filter
+      if (collectionKey === 'band' && p.styleGroup !== 'band') return false;
+      if (collectionKey === 'meme' && p.styleGroup !== 'meme') return false;
+      if (collectionKey === 'ringer' && p.styleGroup !== 'ringer') return false;
       if (collectionKey === 'void' && p.collectionSlug !== 'void') return false;
       if (collectionKey === 'feed' && p.collectionSlug !== 'feed') return false;
+
       // Category filter
       if (selectedCategory !== 'All' && p.category !== selectedCategory) return false;
       return true;
@@ -90,27 +102,35 @@ export default function CollectionPage({
         <div className="collection-switch-tabs" role="tablist" aria-label="Collections">
           <button 
             role="tab"
-            aria-selected={collectionKey === 'void'}
-            className={`switch-tab tab-void ${collectionKey === 'void' ? 'active' : ''}`}
-            onClick={() => onSwitchCollection('void')}
-          >
-            The Void (Dark Alternative)
-          </button>
-          <button 
-            role="tab"
-            aria-selected={collectionKey === 'feed'}
-            className={`switch-tab tab-feed ${collectionKey === 'feed' ? 'active' : ''}`}
-            onClick={() => onSwitchCollection('feed')}
-          >
-            The Feed (Ironic Gen-Z)
-          </button>
-          <button 
-            role="tab"
-            aria-selected={collectionKey === 'all'}
-            className={`switch-tab ${collectionKey === 'all' ? 'active' : ''}`}
-            onClick={() => onSwitchCollection('all')}
+            aria-selected={collectionKey === 'all' || collectionKey === 'apparel'}
+            className={`switch-tab ${collectionKey === 'all' || collectionKey === 'apparel' ? 'active' : ''}`}
+            onClick={() => onSwitchCollection('apparel')}
           >
             All Pieces ({products.length})
+          </button>
+          <button 
+            role="tab"
+            aria-selected={collectionKey === 'band'}
+            className={`switch-tab tab-void ${collectionKey === 'band' ? 'active' : ''}`}
+            onClick={() => onSwitchCollection('band')}
+          >
+            Vintage Band Tees
+          </button>
+          <button 
+            role="tab"
+            aria-selected={collectionKey === 'meme'}
+            className={`switch-tab tab-feed ${collectionKey === 'meme' ? 'active' : ''}`}
+            onClick={() => onSwitchCollection('meme')}
+          >
+            Brat &amp; Pop Culture
+          </button>
+          <button 
+            role="tab"
+            aria-selected={collectionKey === 'ringer'}
+            className={`switch-tab ${collectionKey === 'ringer' ? 'active' : ''}`}
+            onClick={() => onSwitchCollection('ringer')}
+          >
+            Ringer &amp; Baby Tees
           </button>
         </div>
       </div>

@@ -41,7 +41,7 @@ export default function Navbar({
               <span className="brand-tag">00 // INDEPENDENT LABEL</span>
             </div>
 
-            {/* Navigation Links */}
+            {/* Navigation Links: Home, Apparel, Art, Music, Manifesto */}
             <nav aria-label="Main Navigation">
               <ul className="nav-links">
                 <li>
@@ -49,23 +49,31 @@ export default function Navbar({
                     className={`nav-link ${activeView === 'home' ? 'active' : ''}`}
                     onClick={() => setActiveView('home')}
                   >
-                    Convergence
+                    Home
                   </button>
                 </li>
                 <li>
                   <button 
-                    className={`nav-link nav-link-void ${activeView === 'void' ? 'active' : ''}`}
-                    onClick={() => setActiveView('void')}
+                    className={`nav-link ${activeView === 'apparel' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
+                    onClick={() => setActiveView('apparel')}
                   >
-                    The Void
+                    Apparel
                   </button>
                 </li>
                 <li>
                   <button 
-                    className={`nav-link nav-link-feed ${activeView === 'feed' ? 'active' : ''}`}
-                    onClick={() => setActiveView('feed')}
+                    className={`nav-link ${activeView === 'art' ? 'active' : ''}`}
+                    onClick={() => setActiveView('art')}
                   >
-                    The Feed
+                    Art
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={`nav-link ${activeView === 'music' ? 'active' : ''}`}
+                    onClick={() => setActiveView('music')}
+                  >
+                    Music
                   </button>
                 </li>
                 <li>
@@ -93,8 +101,8 @@ export default function Navbar({
                 <span>NEXT DROP</span>
                 {totalVotesCount > 0 && (
                   <span style={{ 
-                    background: 'var(--accent-lime)', 
-                    color: '#080809', 
+                    background: 'var(--accent-purple)', 
+                    color: '#ffffff', 
                     padding: '0.1rem 0.35rem', 
                     fontSize: '0.65rem', 
                     borderRadius: '2px',

@@ -11,7 +11,7 @@ export default function Footer({ onSwitchView, onOpenArena }) {
               ODD FREQUENCY
             </div>
             <p className="footer-brand-bio">
-              Independent experimental clothing brand for Indian Gen-Z. Exploring the friction between underground heavywear (The Void) and ironic niche internet humor (The Feed).
+              Independent experimental clothing brand for Indian counterculture. Exploring the collision between authentic vintage rock &amp; metal tour wear, Charli brat-summer irony, visual lithograph art, and underground radio soundscapes.
             </p>
             <div style={{ marginTop: '0.5rem' }}>
               <span className="badge-id">CONCEPT PROTOTYPE &bull; ZERO REAL PAYMENTS</span>
@@ -23,18 +23,23 @@ export default function Footer({ onSwitchView, onOpenArena }) {
             <h4>EXPLORATION</h4>
             <ul className="footer-links-list">
               <li>
-                <a href="#convergence" onClick={(e) => { e.preventDefault(); onSwitchView('home'); }}>
-                  Convergence (Home)
+                <a href="#home" onClick={(e) => { e.preventDefault(); onSwitchView('home'); }}>
+                  Home (Overview)
                 </a>
               </li>
               <li>
-                <a href="#void" onClick={(e) => { e.preventDefault(); onSwitchView('void'); }}>
-                  The Void (Grunge Heavywear)
+                <a href="#apparel" onClick={(e) => { e.preventDefault(); onSwitchView('apparel'); }}>
+                  Apparel (Band &amp; Grunge Tees)
                 </a>
               </li>
               <li>
-                <a href="#feed" onClick={(e) => { e.preventDefault(); onSwitchView('feed'); }}>
-                  The Feed (Ironic Internet Tees)
+                <a href="#art" onClick={(e) => { e.preventDefault(); onSwitchView('art'); }}>
+                  Art (Lithographs &amp; Screenprints)
+                </a>
+              </li>
+              <li>
+                <a href="#music" onClick={(e) => { e.preventDefault(); onSwitchView('music'); }}>
+                  Music (Radio Sound System)
                 </a>
               </li>
               <li>

@@ -1,5 +1,5 @@
 # ODD FREQUENCY // INDEPENDENT CLOTHING LABEL
-
+https://youtube.com/playlist?list=PLX3pJ_cUqMmg&si=p9dNbNOtHRRnSkx2
 > **"Clothes for the beautifully out of sync."**  
 > An experimental fashion label for Indian Gen-Z exploring the friction between dark alternative grunge heavywear (**The Void**) and ironic niche internet culture (**The Feed**).
 
