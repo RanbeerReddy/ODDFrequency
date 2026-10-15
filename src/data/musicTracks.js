@@ -47,6 +47,11 @@ export const GENRES = [
 
 export const DEFAULT_TRACKS = [
   // -------------------------------------------------------------
+  // YOUTUBE PLAYLIST (METADATA LOADED DYNAMICALLY VIA YOUTUBE API)
+  // -------------------------------------------------------------
+  'https://youtube.com/playlist?list=PLX3pJ_cUqMmg&si=BFDtm7aqQvzJUHND',
+
+  // -------------------------------------------------------------
   // THE VOID: Darkwave, Post-Punk, Grunge, Dark Alternative
   // -------------------------------------------------------------
   {
@@ -244,9 +249,101 @@ export function parseYouTubeInput(input) {
 /**
  * Generates an HQ thumbnail preview URL from a YouTube ID
  */
-export function getYouTubeThumbnail(youtubeId, type = 'video') {
+export function getYouTubeThumbnail(youtubeId, type = 'video', customThumbnail = null) {
+  if (customThumbnail) return customThumbnail;
   if (type === 'playlist') {
     return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80';
   }
   return `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
 }
+
+/**
+ * Normalizes any track input (URL string or object) into a standardized track structure.
+ * Allows passing just a YouTube link; metadata is populated dynamically via YouTube API.
+ */
+export function normalizeTrack(item, index = 0) {
+  if (!item) return null;
+
+  if (typeof item === 'string') {
+    const cleanUrl = item.trim();
+    const parsed = parseYouTubeInput(cleanUrl);
+    const id = parsed?.id || `yt-${index}`;
+    const type = parsed?.type || 'video';
+    return {
+      id: `${type}-${id}`,
+      url: cleanUrl,
+      youtubeId: id,
+      type,
+      title: type === 'playlist' ? 'YouTube Playlist' : 'YouTube Audio',
+      artist: 'YouTube Signal',
+      genre: 'void',
+      duration: '',
+      autoFetch: true
+    };
+  }
+
+  if (typeof item === 'object') {
+    const rawUrl = item.url || (item.youtubeId ? (item.type === 'playlist' ? `https://www.youtube.com/playlist?list=${item.youtubeId}` : `https://www.youtube.com/watch?v=${item.youtubeId}`) : '');
+    const parsed = rawUrl ? parseYouTubeInput(rawUrl) : null;
+    const type = item.type || parsed?.type || (item.youtubeId?.startsWith('PL') ? 'playlist' : 'video');
+    const youtubeId = item.youtubeId || parsed?.id || (item.id ? item.id.replace(/^(void|feed|drone|custom|pl|video|of1)-/, '') : `yt-${index}`);
+    
+    return {
+      id: item.id || `${type}-${youtubeId}`,
+      url: rawUrl,
+      youtubeId,
+      type,
+      title: item.title || (type === 'playlist' ? 'YouTube Playlist' : 'YouTube Audio'),
+      artist: item.artist || 'YouTube Signal',
+      genre: item.genre || 'void',
+      duration: item.duration || '',
+      thumbnail: item.thumbnail,
+      note: item.note,
+      autoFetch: !item.title || item.title === 'YouTube Playlist' || item.title === 'YouTube Audio'
+    };
+  }
+
+  return item;
+}
+
+/**
+ * Normalizes an array of tracks or raw URL strings
+ */
+export function normalizeTracks(tracks) {
+  if (!Array.isArray(tracks)) return [];
+  return tracks.map((t, idx) => normalizeTrack(t, idx)).filter(Boolean);
+}
+
+const metadataCache = new Map();
+
+/**
+ * Dynamically fetches title, channel/artist, and thumbnail from YouTube oEmbed API
+ */
+export async function fetchYouTubeMetadata(urlOrId, type = 'video') {
+  if (!urlOrId) return null;
+  const cacheKey = `${type}:${urlOrId}`;
+  if (metadataCache.has(cacheKey)) return metadataCache.get(cacheKey);
+
+  try {
+    let targetUrl = urlOrId;
+    if (!targetUrl.startsWith('http')) {
+      targetUrl = type === 'playlist'
+        ? `https://www.youtube.com/playlist?list=${urlOrId}`
+        : `https://www.youtube.com/watch?v=${urlOrId}`;
+    }
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`;
+    const res = await fetch(oembedUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const result = {
+      title: data.title || '',
+      artist: data.author_name || 'YouTube',
+      thumbnail: data.thumbnail_url || ''
+    };
+    metadataCache.set(cacheKey, result);
+    return result;
+  } catch {
+    return null;
+  }
+}
+

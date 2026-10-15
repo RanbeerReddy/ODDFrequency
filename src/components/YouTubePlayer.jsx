@@ -3,7 +3,9 @@ import {
   DEFAULT_TRACKS, 
   GENRES, 
   parseYouTubeInput, 
-  getYouTubeThumbnail 
+  getYouTubeThumbnail,
+  normalizeTracks,
+  fetchYouTubeMetadata
 } from '../data/musicTracks.js';
 import { audioPlayerService } from '../utils/audioEngine.js';
 
@@ -22,12 +24,18 @@ export default function YouTubePlayer() {
 
   // Combine default and user-added tracks
   const allTracks = useMemo(() => {
-    return [...DEFAULT_TRACKS, ...customTracks];
+    return normalizeTracks([...DEFAULT_TRACKS, ...customTracks]);
   }, [customTracks]);
+
+  // Dynamic live metadata state populated by YouTube API
+  const [liveMetadata, setLiveMetadata] = useState({});
 
   // --- Player State ---
   const [activeGenre, setActiveGenre] = useState('all');
-  const [currentTrackId, setCurrentTrackId] = useState(DEFAULT_TRACKS[0]?.id || 'void-01');
+  const [currentTrackId, setCurrentTrackId] = useState(() => {
+    const list = normalizeTracks(DEFAULT_TRACKS);
+    return list[0]?.id || 'void-01';
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isShuffle, setIsShuffle] = useState(true); // Default to shuffle/random for dynamic radio experience
@@ -83,6 +91,57 @@ export default function YouTubePlayer() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  // Sync live metadata (title, artist, duration) dynamically from YouTube player instance
+  const syncLivePlayerInfo = useCallback((player) => {
+    if (!player || typeof player.getVideoData !== 'function') return;
+    try {
+      const data = player.getVideoData();
+      const dur = player.getDuration?.();
+      if (data && (data.title || data.author)) {
+        setLiveMetadata(prev => {
+          const currentEntry = prev[currentTrackId] || {};
+          if (currentEntry.title === data.title && currentEntry.artist === data.author && (!dur || currentEntry.rawDuration === dur)) {
+            return prev;
+          }
+          return {
+            ...prev,
+            [currentTrackId]: {
+              ...currentEntry,
+              title: data.title || currentEntry.title,
+              artist: data.author || currentEntry.artist,
+              rawDuration: dur,
+              duration: dur && dur > 0 ? formatTime(dur) : currentEntry.duration,
+              thumbnail: data.video_id ? `https://img.youtube.com/vi/${data.video_id}/mqdefault.jpg` : currentEntry.thumbnail
+            }
+          };
+        });
+      }
+    } catch {
+      // player not ready
+    }
+  }, [currentTrackId]);
+
+  // Dynamically fetch metadata via YouTube oEmbed for any track without hardcoded details
+  useEffect(() => {
+    allTracks.forEach(track => {
+      if (track.autoFetch && !liveMetadata[track.id]) {
+        fetchYouTubeMetadata(track.url || track.youtubeId, track.type).then(meta => {
+          if (meta) {
+            setLiveMetadata(prev => ({
+              ...prev,
+              [track.id]: {
+                ...prev[track.id],
+                title: meta.title,
+                artist: meta.artist,
+                thumbnail: meta.thumbnail
+              }
+            }));
+          }
+        });
+      }
+    });
+  }, [allTracks, liveMetadata]);
+
   // Playback of a specific Track ID
   const playTrackById = useCallback((trackId, autoPlay = true) => {
     const targetTrack = allTracks.find(t => t.id === trackId);
@@ -100,9 +159,10 @@ export default function YouTubePlayer() {
       try {
         if (targetTrack.type === 'playlist') {
           if (autoPlay) {
-            playerRef.current.loadPlaylist({ list: targetTrack.youtubeId });
+            playerRef.current.loadPlaylist({ list: targetTrack.youtubeId, listType: 'playlist' });
+            setIsPlaying(true);
           } else {
-            playerRef.current.cuePlaylist({ list: targetTrack.youtubeId });
+            playerRef.current.cuePlaylist({ list: targetTrack.youtubeId, listType: 'playlist' });
           }
         } else {
           if (autoPlay) {
@@ -120,6 +180,15 @@ export default function YouTubePlayer() {
 
   // Navigation: Next & Previous
   const handlePlayNext = useCallback(() => {
+    if (currentTrack?.type === 'playlist' && playerRef.current && typeof playerRef.current.nextVideo === 'function') {
+      try {
+        playerRef.current.nextVideo();
+        return;
+      } catch {
+        // fallback
+      }
+    }
+
     if (genreTracks.length === 0) return;
 
     if (isShuffle) {
@@ -133,21 +202,30 @@ export default function YouTubePlayer() {
       const nextTrack = genreTracks[nextIndex];
       if (nextTrack) playTrackById(nextTrack.id, true);
     }
-  }, [genreTracks, isShuffle, currentTrackId, playTrackById]);
+  }, [genreTracks, isShuffle, currentTrackId, playTrackById, currentTrack?.type]);
 
   const handlePlayPrev = useCallback(() => {
-    if (genreTracks.length === 0) return;
-
     if (currentTime > 4 && playerRef.current?.seekTo) {
       playerRef.current.seekTo(0);
       return;
     }
 
+    if (currentTrack?.type === 'playlist' && playerRef.current && typeof playerRef.current.previousVideo === 'function') {
+      try {
+        playerRef.current.previousVideo();
+        return;
+      } catch {
+        // fallback
+      }
+    }
+
+    if (genreTracks.length === 0) return;
+
     const currentIndex = genreTracks.findIndex(t => t.id === currentTrackId);
     const prevIndex = (currentIndex - 1 + genreTracks.length) % genreTracks.length;
     const prevTrack = genreTracks[prevIndex];
     if (prevTrack) playTrackById(prevTrack.id, true);
-  }, [genreTracks, currentTime, currentTrackId, playTrackById]);
+  }, [genreTracks, currentTime, currentTrackId, playTrackById, currentTrack?.type]);
 
   // Stable callback ref for next track
   const handlePlayNextRef = useRef(handlePlayNext);
@@ -194,7 +272,7 @@ export default function YouTubePlayer() {
             event.target.setVolume(volume * 100);
             if (isMuted) event.target.mute();
             if (currentTrack?.type === 'playlist') {
-              event.target.cuePlaylist({ list: currentTrack.youtubeId });
+              event.target.cuePlaylist({ list: currentTrack.youtubeId, listType: 'playlist' });
             }
           },
           onStateChange: (event) => {
@@ -205,11 +283,14 @@ export default function YouTubePlayer() {
               setIsBuffering(false);
               const dur = event.target.getDuration();
               if (dur) setDuration(dur);
+              syncLivePlayerInfo(event.target);
             } else if (state === window.YT.PlayerState.PAUSED) {
               setIsPlaying(false);
               setIsBuffering(false);
+              syncLivePlayerInfo(event.target);
             } else if (state === window.YT.PlayerState.BUFFERING) {
               setIsBuffering(true);
+              syncLivePlayerInfo(event.target);
             } else if (state === window.YT.PlayerState.ENDED) {
               setIsPlaying(false);
               handlePlayNextRef.current();
@@ -250,6 +331,7 @@ export default function YouTubePlayer() {
             const dur = playerRef.current.getDuration();
             setCurrentTime(cur || 0);
             if (dur && dur > 0) setDuration(dur);
+            syncLivePlayerInfo(playerRef.current);
           } catch {
             // Re-buffering
           }
@@ -262,7 +344,7 @@ export default function YouTubePlayer() {
     return () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, syncLivePlayerInfo]);
 
   // Roll a Random Song in current or chosen genre immediately
   const handleRollRandomGenreTrack = useCallback((genre = activeGenre) => {
@@ -484,7 +566,7 @@ export default function YouTubePlayer() {
 
         <div className="yt-monitor-footer">
           <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-            {currentTrack?.title} — {currentTrack?.artist}
+            {(liveMetadata[currentTrack?.id]?.title || currentTrack?.title)} — {(liveMetadata[currentTrack?.id]?.artist || currentTrack?.artist)}
           </span>
           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--accent-lime)' }}>
             {isPlaying ? '● BROADCASTING' : '○ PAUSED'}
@@ -529,8 +611,8 @@ export default function YouTubePlayer() {
                 <div className="yt-synth-tape-icon">📼</div>
               ) : (
                 <img 
-                  src={getYouTubeThumbnail(currentTrack?.youtubeId, currentTrack?.type)} 
-                  alt={currentTrack?.title || 'Odd Frequency'}
+                  src={getYouTubeThumbnail(currentTrack?.youtubeId, currentTrack?.type, liveMetadata[currentTrack?.id]?.thumbnail || currentTrack?.thumbnail)} 
+                  alt={liveMetadata[currentTrack?.id]?.title || currentTrack?.title || 'Odd Frequency'}
                   className="yt-track-thumb-img"
                   loading="lazy"
                 />
@@ -545,7 +627,7 @@ export default function YouTubePlayer() {
             <div className="yt-track-info-col">
               <div className="yt-dock-title-marquee">
                 <span className="yt-dock-title-text">
-                  {isSynthDroneMode ? 'ANALOG TAPE DRONE // 432Hz' : currentTrack?.title}
+                  {isSynthDroneMode ? 'ANALOG TAPE DRONE // 432Hz' : (liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
                 </span>
               </div>
               <div className="yt-dock-meta-row">
@@ -553,7 +635,7 @@ export default function YouTubePlayer() {
                   {isSynthDroneMode ? 'SYNTH' : activeGenreMeta.tag}
                 </span>
                 <span className="yt-dock-artist">
-                  {isSynthDroneMode ? 'ODD FREQUENCY ENGINE' : currentTrack?.artist}
+                  {isSynthDroneMode ? 'ODD FREQUENCY ENGINE' : (liveMetadata[currentTrack?.id]?.artist || currentTrack?.artist)}
                 </span>
                 {!isSynthDroneMode && (
                   <span className="yt-dock-timer">
@@ -815,8 +897,8 @@ export default function YouTubePlayer() {
 
                           <div className="yt-card-thumb">
                             <img 
-                              src={getYouTubeThumbnail(track.youtubeId, track.type)} 
-                              alt={track.title}
+                              src={getYouTubeThumbnail(track.youtubeId, track.type, liveMetadata[track.id]?.thumbnail || track.thumbnail)} 
+                              alt={liveMetadata[track.id]?.title || track.title}
                               loading="lazy"
                             />
                             {track.type === 'playlist' && (
@@ -825,16 +907,16 @@ export default function YouTubePlayer() {
                           </div>
 
                           <div className="yt-card-details">
-                            <div className="yt-card-title">{track.title}</div>
+                            <div className="yt-card-title">{liveMetadata[track.id]?.title || track.title}</div>
                             <div className="yt-card-sub">
-                              <span className="yt-card-artist">{track.artist}</span>
+                              <span className="yt-card-artist">{liveMetadata[track.id]?.artist || track.artist}</span>
                               {track.note && <span className="yt-card-note">• {track.note}</span>}
                             </div>
                           </div>
 
                           <div className="yt-card-right">
                             <span className="yt-card-genre-tag">{track.genre.toUpperCase()}</span>
-                            <span className="yt-card-dur">{track.duration || '3:00'}</span>
+                            <span className="yt-card-dur">{liveMetadata[track.id]?.duration || track.duration || (track.type === 'playlist' ? 'PLAYLIST' : '3:00')}</span>
 
                             {track.id.startsWith('custom-') && (
                               <button 

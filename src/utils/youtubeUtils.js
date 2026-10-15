@@ -46,7 +46,8 @@ export function parseYouTubeInput(input) {
  * @param {'video' | 'playlist'} [type='video'] - Type of media
  * @returns {string} Thumbnail image URL
  */
-export function getYouTubeThumbnail(youtubeId, type = 'video') {
+export function getYouTubeThumbnail(youtubeId, type = 'video', customThumbnail = null) {
+  if (customThumbnail) return customThumbnail;
   if (type === 'playlist') {
     return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80';
   }
