@@ -65,8 +65,8 @@ export default function CollectionPage({
     // Sorting
     return list.sort((a, b) => {
       if (sortBy === 'voted') {
-        const votesA = productVotes[a.id] || a.seedVotes;
-        const votesB = productVotes[b.id] || b.seedVotes;
+        const votesA = productVotes[a.id] || 0;
+        const votesB = productVotes[b.id] || 0;
         return votesB - votesA;
       }
       if (sortBy === 'price-asc') {
@@ -159,7 +159,7 @@ export default function CollectionPage({
             onChange={(e) => setSortBy(e.target.value)}
           >
             <option value="featured">Featured Order</option>
-            <option value="voted">Most Voted by Community</option>
+            <option value="voted">Most Voted (Session)</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
           </select>
@@ -185,7 +185,7 @@ export default function CollectionPage({
               product={product}
               onSelectProduct={onSelectProduct}
               hasVoted={votedProductIds.includes(product.id)}
-              voteCount={productVotes[product.id] || product.seedVotes}
+              voteCount={productVotes[product.id] || 0}
               onVote={onVote}
             />
           ))}
