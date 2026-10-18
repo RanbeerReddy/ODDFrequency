@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-export default function Navbar({ 
-  activeView, 
-  setActiveView, 
+export default function Navbar({
+  activeView,
+  setActiveView,
   totalVotesCount = 0,
   onOpenArena
 }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Navigate to a view and always close the mobile drawer
+  const navigate = (view) => {
+    setActiveView(view);
+    setMobileOpen(false);
+  };
+
+  const openArena = () => {
+    onOpenArena();
+    setMobileOpen(false);
+  };
+
   return (
     <>
       {/* Top Demand Validation Disclaimer Strip */}
@@ -19,14 +32,15 @@ export default function Navbar({
       <header className="site-nav">
         <div className="container">
           <div className="nav-inner">
+
             {/* Brand Logo & Wordmark */}
-            <div 
-              className="brand-logo-wrap" 
-              onClick={() => setActiveView('home')} 
+            <div
+              className="brand-logo-wrap"
+              onClick={() => navigate('home')}
               style={{ cursor: 'pointer' }}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveView('home')}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('home')}
               aria-label="Odd Frequency Home"
             >
               <div className="brand-wordmark">
@@ -41,45 +55,45 @@ export default function Navbar({
               <span className="brand-tag">00 // INDEPENDENT LABEL</span>
             </div>
 
-            {/* Navigation Links: Home, Apparel, Art, Music, Manifesto */}
-            <nav aria-label="Main Navigation">
+            {/* Desktop Navigation Links — hidden on mobile via CSS */}
+            <nav aria-label="Main Navigation" className="nav-desktop">
               <ul className="nav-links">
                 <li>
-                  <button 
+                  <button
                     className={`nav-link ${activeView === 'home' ? 'active' : ''}`}
-                    onClick={() => setActiveView('home')}
+                    onClick={() => navigate('home')}
                   >
                     Home
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     className={`nav-link ${activeView === 'apparel' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
-                    onClick={() => setActiveView('apparel')}
+                    onClick={() => navigate('apparel')}
                   >
                     Apparel
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     className={`nav-link ${activeView === 'art' ? 'active' : ''}`}
-                    onClick={() => setActiveView('art')}
+                    onClick={() => navigate('art')}
                   >
                     Art
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     className={`nav-link ${activeView === 'music' ? 'active' : ''}`}
-                    onClick={() => setActiveView('music')}
+                    onClick={() => navigate('music')}
                   >
                     Music
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     className={`nav-link ${activeView === 'manifesto' ? 'active' : ''}`}
-                    onClick={() => setActiveView('manifesto')}
+                    onClick={() => navigate('manifesto')}
                   >
                     Manifesto
                   </button>
@@ -87,12 +101,12 @@ export default function Navbar({
               </ul>
             </nav>
 
-            {/* Action Bar */}
-            <div className="nav-actions">
-              <button 
+            {/* Desktop Action Bar — hidden on mobile via CSS */}
+            <div className="nav-actions nav-desktop">
+              <button
                 className="btn-vote-shortcut"
-                onClick={onOpenArena}
-                aria-label={`View Next Drop Voting Arena, ${totalVotesCount} total votes recorded`}
+                onClick={openArena}
+                aria-label={`View Next Drop Voting Arena, ${totalVotesCount} session votes cast`}
                 title="Community Voting Arena"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -100,11 +114,11 @@ export default function Navbar({
                 </svg>
                 <span>NEXT DROP</span>
                 {totalVotesCount > 0 && (
-                  <span style={{ 
-                    background: 'var(--accent-purple)', 
-                    color: '#ffffff', 
-                    padding: '0.1rem 0.35rem', 
-                    fontSize: '0.65rem', 
+                  <span style={{
+                    background: 'var(--accent-purple)',
+                    color: '#ffffff',
+                    padding: '0.1rem 0.35rem',
+                    fontSize: '0.65rem',
                     borderRadius: '2px',
                     fontWeight: '800'
                   }}>
@@ -113,7 +127,89 @@ export default function Navbar({
                 )}
               </button>
             </div>
+
+            {/* Hamburger toggle — visible only on mobile via CSS */}
+            <button
+              className={`nav-hamburger ${mobileOpen ? 'is-open' : ''}`}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-drawer"
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            >
+              <span className="hamburger-bar"></span>
+              <span className="hamburger-bar"></span>
+              <span className="hamburger-bar"></span>
+            </button>
+
           </div>
+        </div>
+
+        {/* Mobile navigation drawer */}
+        <div
+          id="mobile-nav-drawer"
+          className={`mobile-nav-drawer ${mobileOpen ? 'is-open' : ''}`}
+          aria-hidden={!mobileOpen}
+        >
+          <nav aria-label="Mobile Navigation">
+            <ul className="mobile-nav-links">
+              <li>
+                <button
+                  className={`mobile-nav-link ${activeView === 'home' ? 'active' : ''}`}
+                  onClick={() => navigate('home')}
+                >
+                  Home
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`mobile-nav-link ${activeView === 'apparel' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
+                  onClick={() => navigate('apparel')}
+                >
+                  Apparel
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`mobile-nav-link ${activeView === 'art' ? 'active' : ''}`}
+                  onClick={() => navigate('art')}
+                >
+                  Art
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`mobile-nav-link ${activeView === 'music' ? 'active' : ''}`}
+                  onClick={() => navigate('music')}
+                >
+                  Music
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`mobile-nav-link ${activeView === 'manifesto' ? 'active' : ''}`}
+                  onClick={() => navigate('manifesto')}
+                >
+                  Manifesto
+                </button>
+              </li>
+              <li className="mobile-nav-divider" aria-hidden="true"></li>
+              <li>
+                <button
+                  className="mobile-nav-link mobile-nav-vote"
+                  onClick={openArena}
+                  aria-label={`View Next Drop Voting Arena, ${totalVotesCount} session votes cast`}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                  NEXT DROP
+                  {totalVotesCount > 0 && (
+                    <span className="mobile-vote-badge">{totalVotesCount}</span>
+                  )}
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
       </header>
     </>
