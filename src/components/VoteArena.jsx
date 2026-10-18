@@ -1,5 +1,6 @@
 import React from 'react';
 import { DROP_CONCEPTS } from '../data/concepts.js';
+import { isSupabaseConfigured } from '../lib/supabase.js';
 
 export default function VoteArena({ 
   votedConceptIds = [], 
@@ -12,7 +13,11 @@ export default function VoteArena({
         <header className="drop-arena-header">
           <div className="arena-tag">
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-lime)', display: 'inline-block' }}></span>
-            <span>COMMUNITY VALIDATION // DROP #01 IN PROGRESS</span>
+            <span>
+              {isSupabaseConfigured 
+                ? 'COMMUNITY VALIDATION // DROP #01 REAL-TIME DATABASE' 
+                : 'COMMUNITY VALIDATION // DROP #01 PRE-LAUNCH PREVIEW'}
+            </span>
           </div>
           <h2 id="arena-heading" className="arena-title">
             HELP US MAKE THE NEXT DROP.
@@ -26,7 +31,7 @@ export default function VoteArena({
         <div className="concepts-arena-grid">
           {DROP_CONCEPTS.map(concept => {
             const isVoid = concept.collectionSlug === 'void';
-            const currentVotes = conceptVotes[concept.id] || concept.seedVotes;
+            const currentVotes = conceptVotes[concept.id] || 0;
             const hasVoted = votedConceptIds.includes(concept.id);
             const percentage = Math.min(100, Math.round((currentVotes / concept.targetThreshold) * 100));
 
@@ -77,12 +82,12 @@ export default function VoteArena({
                 <button 
                   className={`btn-vote-concept ${hasVoted ? 'voted' : ''}`}
                   onClick={() => onVoteConcept(concept.id)}
-                  aria-label={`Cast session vote for ${concept.name}. Current votes: ${currentVotes}`}
+                  aria-label={`Cast local session vote for ${concept.name}. Current session votes: ${currentVotes}`}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill={hasVoted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                   </svg>
-                  <span>{hasVoted ? 'VOTED IN SESSION' : 'VOTE FOR THIS PIECE'}</span>
+                  <span>{hasVoted ? 'LOCAL SESSION VOTE CAST' : 'VOTE FOR THIS PIECE'}</span>
                 </button>
               </div>
             );
@@ -104,10 +109,18 @@ export default function VoteArena({
           gap: '1rem'
         }}>
           <div>
-            <strong>DISCLOSURE:</strong> Vote tallies are recorded in local storage and mirrored to our development queue. We never fabricate engagement or pretend items have sold out.
+            {isSupabaseConfigured ? (
+              <>
+                <strong>COMMUNITY VALIDATION:</strong> Vote tallies are synchronized with our Supabase Postgres database. Single-vote integrity is enforced to preserve genuine demand validation.
+              </>
+            ) : (
+              <>
+                <strong>TRANSPARENCY NOTE:</strong> Voting is currently operating in pre-launch local preview mode. Counts start from zero and are stored in your browser session. Server database synchronization will be activated upon Drop #01 backend deployment.
+              </>
+            )}
           </div>
-          <div style={{ color: 'var(--text-tertiary)' }}>
-            [ BACKEND READY &bull; CAN CONNECT TO FORMSPREE / GOOGLE SHEETS ]
+          <div style={{ color: isSupabaseConfigured ? 'var(--accent-lime)' : 'var(--text-tertiary)' }}>
+            {isSupabaseConfigured ? '[ LIVE SUPABASE PERSISTENCE ACTIVE ]' : '[ PRE-LAUNCH PREVIEW • BACKEND PENDING ]'}
           </div>
         </div>
       </div>
