@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar.jsx';
 import Hero from './components/Hero.jsx';
 import CollectionCards from './components/CollectionCards.jsx';
@@ -16,6 +16,14 @@ import Toast from './components/Toast.jsx';
 
 import { PRODUCTS } from './data/products.js';
 import { DROP_CONCEPTS } from './data/concepts.js';
+import { 
+  isSupabaseConfigured, 
+  submitWaitlistEmail, 
+  recordVoteOnServer, 
+  fetchServerVoteCounts, 
+  fetchUserVotedItemIds, 
+  getOrCreateAnonymousVoterToken 
+} from './lib/supabase.js';
 
 export default function App() {
   const [activeView, setActiveView] = useState('home'); // 'home', 'apparel', 'band', 'meme', 'ringer', 'art', 'music', 'manifesto'
@@ -36,12 +44,14 @@ export default function App() {
       const stored = JSON.parse(localStorage.getItem('of_product_votes') || '{}');
       const initial = {};
       PRODUCTS.forEach(p => {
-        initial[p.id] = (stored[p.id] !== undefined) ? stored[p.id] : p.seedVotes;
+        const val = stored[p.id];
+        // Ensure reset if previously seeded with fabricated 300+ counts
+        initial[p.id] = (typeof val === 'number' && val < 50) ? val : 0;
       });
       return initial;
     } catch {
       const initial = {};
-      PRODUCTS.forEach(p => { initial[p.id] = p.seedVotes; });
+      PRODUCTS.forEach(p => { initial[p.id] = 0; });
       return initial;
     }
   });
@@ -59,15 +69,59 @@ export default function App() {
       const stored = JSON.parse(localStorage.getItem('of_concept_votes') || '{}');
       const initial = {};
       DROP_CONCEPTS.forEach(c => {
-        initial[c.id] = (stored[c.id] !== undefined) ? stored[c.id] : c.seedVotes;
+        const val = stored[c.id];
+        // Ensure reset if previously seeded with fabricated 400+ counts
+        initial[c.id] = (typeof val === 'number' && val < 50) ? val : 0;
       });
       return initial;
     } catch {
       const initial = {};
-      DROP_CONCEPTS.forEach(c => { initial[c.id] = c.seedVotes; });
+      DROP_CONCEPTS.forEach(c => { initial[c.id] = 0; });
       return initial;
     }
   });
+
+  // Fetch real vote tallies and user voted items from Supabase when configured
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const voterToken = getOrCreateAnonymousVoterToken();
+
+    // 1. Fetch live aggregate vote totals from database
+    fetchServerVoteCounts().then(serverCounts => {
+      if (serverCounts && Object.keys(serverCounts).length > 0) {
+        setProductVotes(prev => {
+          const updated = { ...prev };
+          PRODUCTS.forEach(p => {
+            if (serverCounts[p.id] !== undefined) {
+              updated[p.id] = serverCounts[p.id];
+            }
+          });
+          return updated;
+        });
+
+        setConceptVotes(prev => {
+          const updated = { ...prev };
+          DROP_CONCEPTS.forEach(c => {
+            if (serverCounts[c.id] !== undefined) {
+              updated[c.id] = serverCounts[c.id];
+            }
+          });
+          return updated;
+        });
+      }
+    });
+
+    // 2. Fetch voted item IDs for this anonymous voter token
+    fetchUserVotedItemIds(voterToken).then(votedIds => {
+      if (Array.isArray(votedIds) && votedIds.length > 0) {
+        const prodVoted = votedIds.filter(id => PRODUCTS.some(p => p.id === id));
+        const conceptVoted = votedIds.filter(id => DROP_CONCEPTS.some(c => c.id === id));
+        if (prodVoted.length > 0) setVotedProductIds(prev => Array.from(new Set([...prev, ...prodVoted])));
+        if (conceptVoted.length > 0) setVotedConceptIds(prev => Array.from(new Set([...prev, ...conceptVoted])));
+      }
+    });
+  }, []);
 
   // Sync theme attribute to document body for contextual aesthetic styling
   useEffect(() => {
@@ -87,73 +141,147 @@ export default function App() {
     setToasts(prev => [...prev, { id, message }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3800);
+    }, 4200);
   };
 
+  const votingInProgressRef = useRef(new Set());
+
   // Handle Product Vote (Demand Validation)
-  const handleVoteProduct = (productId) => {
-    if (votedProductIds.includes(productId)) {
-      addToast(`Session lock: You have already cast your vote for ${productId}.`);
+  const handleVoteProduct = async (productId) => {
+    if (votedProductIds.includes(productId) || votingInProgressRef.current.has(productId)) {
+      addToast(`Session lock: You have already cast a vote for ${productId}.`);
       return;
     }
 
-    const updatedVoted = [...votedProductIds, productId];
-    setVotedProductIds(updatedVoted);
-    try {
-      localStorage.setItem('of_voted_products', JSON.stringify(updatedVoted));
-    } catch (e) {}
+    if (!isSupabaseConfigured) {
+      // Pre-launch local preview mode
+      const updatedVoted = [...votedProductIds, productId];
+      setVotedProductIds(updatedVoted);
+      try {
+        localStorage.setItem('of_voted_products', JSON.stringify(updatedVoted));
+      } catch {}
 
-    const newVotesCount = (productVotes[productId] || 0) + 1;
-    const updatedVotesMap = { ...productVotes, [productId]: newVotesCount };
-    setProductVotes(updatedVotesMap);
-    try {
-      localStorage.setItem('of_product_votes', JSON.stringify(updatedVotesMap));
-    } catch (e) {}
+      const newVotesCount = (productVotes[productId] || 0) + 1;
+      const updatedVotesMap = { ...productVotes, [productId]: newVotesCount };
+      setProductVotes(updatedVotesMap);
+      try {
+        localStorage.setItem('of_product_votes', JSON.stringify(updatedVotesMap));
+      } catch {}
 
-    addToast(`Vote recorded for ${productId}! Total votes: ${newVotesCount}`);
+      addToast(`Local session vote cast for ${productId} (Stored in browser • Server database pending)`);
+      return;
+    }
+
+    // Live Supabase integration
+    votingInProgressRef.current.add(productId);
+    try {
+      const voterToken = getOrCreateAnonymousVoterToken();
+      const result = await recordVoteOnServer(productId, 'product', voterToken);
+
+      if (result.success) {
+        const updatedVoted = [...votedProductIds, productId];
+        setVotedProductIds(updatedVoted);
+        try {
+          localStorage.setItem('of_voted_products', JSON.stringify(updatedVoted));
+        } catch {}
+
+        const newVotesCount = (productVotes[productId] || 0) + 1;
+        const updatedVotesMap = { ...productVotes, [productId]: newVotesCount };
+        setProductVotes(updatedVotesMap);
+
+        addToast(`✓ Vote recorded on server for ${productId}!`);
+      } else {
+        if (result.duplicate) {
+          if (!votedProductIds.includes(productId)) {
+            setVotedProductIds(prev => [...prev, productId]);
+          }
+        }
+        addToast(result.message);
+      }
+    } finally {
+      votingInProgressRef.current.delete(productId);
+    }
   };
 
   // Handle Drop Arena Concept Vote
-  const handleVoteConcept = (conceptId) => {
-    if (votedConceptIds.includes(conceptId)) {
-      addToast(`Session lock: You've already voted for ${conceptId} in this session.`);
+  const handleVoteConcept = async (conceptId) => {
+    if (votedConceptIds.includes(conceptId) || votingInProgressRef.current.has(conceptId)) {
+      addToast(`Session lock: You have already voted for ${conceptId}.`);
       return;
     }
 
-    const updatedVoted = [...votedConceptIds, conceptId];
-    setVotedConceptIds(updatedVoted);
-    try {
-      localStorage.setItem('of_voted_concepts', JSON.stringify(updatedVoted));
-    } catch (e) {}
+    if (!isSupabaseConfigured) {
+      // Pre-launch local preview mode
+      const updatedVoted = [...votedConceptIds, conceptId];
+      setVotedConceptIds(updatedVoted);
+      try {
+        localStorage.setItem('of_voted_concepts', JSON.stringify(updatedVoted));
+      } catch {}
 
-    const newVotes = (conceptVotes[conceptId] || 0) + 1;
-    const updatedVotesMap = { ...conceptVotes, [conceptId]: newVotes };
-    setConceptVotes(updatedVotesMap);
-    try {
-      localStorage.setItem('of_concept_votes', JSON.stringify(updatedVotesMap));
-    } catch (e) {}
+      const newVotes = (conceptVotes[conceptId] || 0) + 1;
+      const updatedVotesMap = { ...conceptVotes, [conceptId]: newVotes };
+      setConceptVotes(updatedVotesMap);
+      try {
+        localStorage.setItem('of_concept_votes', JSON.stringify(updatedVotesMap));
+      } catch {}
 
-    addToast(`Next drop vote recorded for ${conceptId}! Total: ${newVotes}`);
+      addToast(`Local session vote cast for ${conceptId} (Stored in browser • Server database pending)`);
+      return;
+    }
+
+    // Live Supabase integration
+    votingInProgressRef.current.add(conceptId);
+    try {
+      const voterToken = getOrCreateAnonymousVoterToken();
+      const result = await recordVoteOnServer(conceptId, 'concept', voterToken);
+
+      if (result.success) {
+        const updatedVoted = [...votedConceptIds, conceptId];
+        setVotedConceptIds(updatedVoted);
+        try {
+          localStorage.setItem('of_voted_concepts', JSON.stringify(updatedVoted));
+        } catch {}
+
+        const newVotes = (conceptVotes[conceptId] || 0) + 1;
+        const updatedVotesMap = { ...conceptVotes, [conceptId]: newVotes };
+        setConceptVotes(updatedVotesMap);
+
+        addToast(`✓ Vote recorded on server for ${conceptId}!`);
+      } else {
+        if (result.duplicate) {
+          if (!votedConceptIds.includes(conceptId)) {
+            setVotedConceptIds(prev => [...prev, conceptId]);
+          }
+        }
+        addToast(result.message);
+      }
+    } finally {
+      votingInProgressRef.current.delete(conceptId);
+    }
   };
 
   // Handle Launch Interest Signup for specific product
-  const handleNotifyProduct = (productId, email) => {
-    try {
-      const waitlist = JSON.parse(localStorage.getItem('of_product_waitlist') || '[]');
-      waitlist.push({ productId, email, timestamp: new Date().toISOString() });
-      localStorage.setItem('of_product_waitlist', JSON.stringify(waitlist));
-    } catch (e) {}
-    addToast(`Added to early release notification for ${productId}`);
+  const handleNotifyProduct = async (productId, email) => {
+    if (!isSupabaseConfigured) {
+      addToast(`Notice: Waitlist backend is not connected. Notification request for ${productId} was not saved to a server.`);
+      return { success: false, isConfigured: false, message: 'Waitlist service is pending backend connection.' };
+    }
+
+    const res = await submitWaitlistEmail(email, productId);
+    addToast(res.message);
+    return res;
   };
 
   // Handle General Waitlist Signup
-  const handleRegisterNewsletter = (email) => {
-    try {
-      const waitlist = JSON.parse(localStorage.getItem('of_general_waitlist') || '[]');
-      waitlist.push({ email, timestamp: new Date().toISOString() });
-      localStorage.setItem('of_general_waitlist', JSON.stringify(waitlist));
-    } catch (e) {}
-    addToast('Signal locked: You are registered for Drop #01 early access.');
+  const handleRegisterNewsletter = async (email) => {
+    if (!isSupabaseConfigured) {
+      addToast('Notice: Waitlist backend is not connected. Email was not saved to a server database.');
+      return { success: false, isConfigured: false, message: 'Waitlist service is pending backend connection.' };
+    }
+
+    const res = await submitWaitlistEmail(email, null);
+    addToast(res.message);
+    return res;
   };
 
   const handleOpenArena = () => {
@@ -229,7 +357,7 @@ export default function App() {
                     product={product}
                     onSelectProduct={setSelectedProduct}
                     hasVoted={votedProductIds.includes(product.id)}
-                    voteCount={productVotes[product.id] || product.seedVotes}
+                    voteCount={productVotes[product.id] || 0}
                     onVote={handleVoteProduct}
                   />
                 ))}
@@ -326,7 +454,7 @@ export default function App() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           hasVoted={votedProductIds.includes(selectedProduct.id)}
-          voteCount={productVotes[selectedProduct.id] || selectedProduct.seedVotes}
+          voteCount={productVotes[selectedProduct.id] || 0}
           onVote={handleVoteProduct}
           onNotifySubmit={handleNotifyProduct}
         />
