@@ -60,33 +60,58 @@ export default function Footer({ onSwitchView, onOpenArena }) {
             <h4>COMMUNITY CHANNELS</h4>
             <ul className="footer-links-list">
               <li>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-                  Instagram // @oddfrequency.in
-                </a>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Instagram // @oddfrequency.in <span style={{ color: 'var(--accent-lime)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>[Coming Soon]</span>
+                </span>
               </li>
               <li>
-                <a href="https://discord.com" target="_blank" rel="noopener noreferrer">
-                  Discord // The Underground Signal
-                </a>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Discord // Underground Signal <span style={{ color: 'var(--accent-lime)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>[Coming Soon]</span>
+                </span>
               </li>
               <li>
-                <a href="https://spotify.com" target="_blank" rel="noopener noreferrer">
-                  Spotify // Odd Frequency Tapes
-                </a>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Spotify // Brand Audio Archive <span style={{ color: 'var(--accent-lime)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>[Coming Soon]</span>
+                </span>
               </li>
               <li>
-                <a href="#waitlist" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }}>
-                  Launch Waitlist Access
-                </a>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Contact // Direct Inquiries <span style={{ color: 'var(--accent-lime)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>[Opening with Drop #01]</span>
+                </span>
               </li>
             </ul>
           </div>
         </div>
 
+        {/* Pre-Launch Transparency & Privacy Notice */}
+        <div style={{
+          marginTop: '2rem',
+          padding: '1.25rem 1.5rem',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)',
+          lineHeight: '1.6'
+        }}>
+          <div style={{ color: 'var(--text-primary)', fontWeight: '700', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+            // PRE-LAUNCH TRANSPARENCY &amp; PRIVACY NOTICE
+          </div>
+          <p style={{ marginBottom: '0.5rem' }}>
+            <strong>Concept Stage:</strong> Odd Frequency is currently an independent prototype testing demand for limited-run apparel in India. No commercial transactions, inventory sales, or payments take place on this website.
+          </p>
+          <p style={{ marginBottom: '0.5rem' }}>
+            <strong>Data &amp; Privacy:</strong> This website does not currently connect to a persistent external database or tracking server. Votes and waitlist inputs remain strictly within your local browser session unless an official backend endpoint is configured. We do not sell or distribute visitor data.
+          </p>
+          <p style={{ margin: 0 }}>
+            <strong>Contact &amp; Inquiries:</strong> Official contact channels and community links will be announced upon the public deployment of Drop #01.
+          </p>
+        </div>
+
         {/* Bottom copyright & disclaimer row */}
         <div className="footer-bottom-row">
           <div>
-            &copy; {new Date().getFullYear()} ODD FREQUENCY &bull; ALL RIGHTS RESERVED.
+            &copy; 2026 ODD FREQUENCY &bull; ALL RIGHTS RESERVED.
           </div>
           <div>
             DEMAND-VALIDATION PROTOTYPE &bull; FABRICATED IN INDIA &bull; NO OVERPRODUCTION
