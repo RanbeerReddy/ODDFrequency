@@ -17,7 +17,7 @@ export const DROP_CONCEPTS = [
     conceptPitch: "380 GSM thermal loopback fleece hoodie featuring distressed blood-red tribal logos down sleeves and back, with antique oxidized gunmetal YKK two-way hardware.",
     plannedPrice: "₹2,899",
     targetThreshold: 600,
-    seedVotes: 488,
+    seedVotes: 0,
     stage: "Sample Wash Calibration"
   },
   {
@@ -31,7 +31,7 @@ export const DROP_CONCEPTS = [
     conceptPitch: "High-contrast cropped baby tee in acid brat neon lime with deep purple contrast ringers and minimal lower-case 'brat' typography across the chest.",
     plannedPrice: "₹1,199",
     targetThreshold: 600,
-    seedVotes: 542,
+    seedVotes: 0,
     stage: "Screenprint Sample Prep"
   },
   {
@@ -45,7 +45,7 @@ export const DROP_CONCEPTS = [
     conceptPitch: "290 GSM heavy ribbed cuffs longsleeve with continuous Dragonslayer blade typography down sleeves and Guts eclipse back print in crimson and bone ink.",
     plannedPrice: "₹1,999",
     targetThreshold: 600,
-    seedVotes: 512,
+    seedVotes: 0,
     stage: "Fabric Mill Sourcing"
   },
   {
@@ -59,7 +59,7 @@ export const DROP_CONCEPTS = [
     conceptPitch: "260 GSM boxy natural raw unbleached tee featuring distressed deep-red stencil 'BITE ME' print with hand-distressed collar micro-punctures.",
     plannedPrice: "₹1,399",
     targetThreshold: 600,
-    seedVotes: 467,
+    seedVotes: 0,
     stage: "Graphic Calibration"
   }
 ];

@@ -28,7 +28,7 @@ export const PRODUCTS = [
       "Pre-shrunk fabric to lock in vibrant neon hue",
       "Drop-shoulder boxy silhouette with relaxed collar"
     ],
-    seedVotes: 582,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -53,7 +53,7 @@ export const PRODUCTS = [
       "Reinforced ribbing on neck collar with subtle micro-fraying",
       "Boxy oversized cut inspired by late 90s concert tour shirts"
     ],
-    seedVotes: 497,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -78,7 +78,7 @@ export const PRODUCTS = [
       "High-durability water-based screenprint",
       "Engineered to withstand heavy wash cycles without graphic peel"
     ],
-    seedVotes: 441,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -103,7 +103,7 @@ export const PRODUCTS = [
       "Distressed neck ribbing with raw character",
       "Generous sleeve length hitting right above the elbow"
     ],
-    seedVotes: 519,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -128,7 +128,7 @@ export const PRODUCTS = [
       "Slightly tailored heritage fit sitting right at hip level",
       "Zero scratchy tags; interior heat-pressed branding"
     ],
-    seedVotes: 463,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -153,7 +153,7 @@ export const PRODUCTS = [
       "Comfortable wide rib collar with double-stitch reinforcement",
       "Vintage lived-in handfeel"
     ],
-    seedVotes: 388,
+    seedVotes: 0,
     isFeatured: false
   },
   {
@@ -178,7 +178,7 @@ export const PRODUCTS = [
       "Exaggerated drop shoulder tailoring with wide sleeves",
       "Heavy gauge collar ribbing that will never bacon or sag"
     ],
-    seedVotes: 612,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -203,7 +203,7 @@ export const PRODUCTS = [
       "Tailored 90s baby tee crop that hugs without constricting",
       "Double stitched raw hem"
     ],
-    seedVotes: 479,
+    seedVotes: 0,
     isFeatured: false
   },
   {
@@ -228,7 +228,7 @@ export const PRODUCTS = [
       "Drop-shoulder silhouette tailored for easy layering",
       "Pre-washed to eliminate shrinkage"
     ],
-    seedVotes: 524,
+    seedVotes: 0,
     isFeatured: true
   },
   {
@@ -253,7 +253,7 @@ export const PRODUCTS = [
       "Relaxed boxy cut with dropped armholes",
       "Resistant to fading through repeated cold washes"
     ],
-    seedVotes: 367,
+    seedVotes: 0,
     isFeatured: false
   },
   {
@@ -278,7 +278,7 @@ export const PRODUCTS = [
       "Ribbed collar with interior taped back-neck seam",
       "Soft combed handfeel"
     ],
-    seedVotes: 415,
+    seedVotes: 0,
     isFeatured: false
   },
   {
@@ -303,7 +303,7 @@ export const PRODUCTS = [
       "Reinforced double-needle stitching throughout",
       "Relaxed drop-shoulder drape"
     ],
-    seedVotes: 538,
+    seedVotes: 0,
     isFeatured: false
   }
 ];

@@ -19,7 +19,7 @@ export const ART_PIECES = [
     description: "An homage to high-contrast Japanese dark fantasy manga. Highlighting the solitary warrior silhouette framed against a bleeding crimson moon. Originally drafted for hand-pulled silkscreen runs.",
     tags: ["Manga Lore", "Crimson Blood", "Screenprint"],
     isAvailableAsPrint: true,
-    seedLikes: 489
+    seedLikes: 0
   },
   {
     id: "ART-002",
@@ -34,7 +34,7 @@ export const ART_PIECES = [
     description: "The minimalist anti-design masterpiece that defined an era. Zero decorative ornamentation, purely raw lower-case typography vibrating against high-saturation lime.",
     tags: ["Hyper-Irony", "Club Culture", "Anti-Design"],
     isAvailableAsPrint: true,
-    seedLikes: 612
+    seedLikes: 0
   },
   {
     id: "ART-003",
@@ -49,7 +49,7 @@ export const ART_PIECES = [
     description: "High-contrast darkroom print of distorted stage masks and blood-red tribal typography. Saturated with raw aggression and late 90s alternative rebellion.",
     tags: ["Nu-Metal", "Archive Darkroom", "Distressed"],
     isAvailableAsPrint: true,
-    seedLikes: 534
+    seedLikes: 0
   },
   {
     id: "ART-004",
@@ -64,7 +64,7 @@ export const ART_PIECES = [
     description: "The illuminated transparent angel/human anatomy suspended amidst glowing electric-blue and solar flares. A timeless monument of 90s grunge melancholy.",
     tags: ["Seattle Grunge", "Electric Blue", "Halftone"],
     isAvailableAsPrint: true,
-    seedLikes: 588
+    seedLikes: 0
   },
   {
     id: "ART-005",
@@ -79,7 +79,7 @@ export const ART_PIECES = [
     description: "Intricately detailed winged knight crest surrounded by gothic baroque dragons and hellfire. An iconic artifact of 80s heavy metal concert mythology.",
     tags: ["Heavy Metal", "Gothic Heraldry", "Vintage 80s"],
     isAvailableAsPrint: true,
-    seedLikes: 447
+    seedLikes: 0
   },
   {
     id: "ART-006",
@@ -94,7 +94,7 @@ export const ART_PIECES = [
     description: "Distressed bone-white palm imprint expressing desperate reaching and existential angst. Unflinching simplicity paired with industrial typography.",
     tags: ["Alt Metal", "Bone White", "Protest Art"],
     isAvailableAsPrint: true,
-    seedLikes: 495
+    seedLikes: 0
   }
 ];
 
