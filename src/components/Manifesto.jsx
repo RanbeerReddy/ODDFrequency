@@ -14,6 +14,28 @@ export default function Manifesto({ onExploreVoid, onExploreFeed }) {
             <div style={{ marginTop: '1rem' }}>
               <span className="badge-id">DEMAND-FIRST &bull; ZERO DEADSTOCK &bull; MADE FOR INDIA</span>
             </div>
+            <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              {onExploreVoid && (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={onExploreVoid}
+                  style={{ fontSize: '0.75rem', letterSpacing: '0.08em' }}
+                >
+                  ENTER THE VOID &rarr;
+                </button>
+              )}
+              {onExploreFeed && (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={onExploreFeed}
+                  style={{ fontSize: '0.75rem', letterSpacing: '0.08em' }}
+                >
+                  TUNE INTO FEED &rarr;
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Deep narrative & pillars */}
