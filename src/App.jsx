@@ -10,7 +10,7 @@ import ProductCard from './components/ProductCard.jsx';
 import VoteArena from './components/VoteArena.jsx';
 import Manifesto from './components/Manifesto.jsx';
 import Newsletter from './components/Newsletter.jsx';
-import AudioPlayer from './components/AudioPlayer.jsx';
+import YouTubePlayer from './components/YouTubePlayer.jsx';
 import Footer from './components/Footer.jsx';
 import Toast from './components/Toast.jsx';
 
@@ -460,8 +460,8 @@ export default function App() {
         />
       )}
 
-      {/* Persistent Skeuomorphic Cyber Radio Player Deck */}
-      <AudioPlayer />
+      {/* Persistent Skeuomorphic Cyber YouTube Radio Player Deck */}
+      <YouTubePlayer />
 
       {/* Site Footer */}
       <Footer 
