@@ -5,4 +5,5 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: './', // Ensures relative asset paths for GitHub Pages and static hosting
+  envPrefix: ['VITE_', 'YOUTUBE_'],
 })
