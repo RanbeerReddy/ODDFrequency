@@ -147,13 +147,15 @@ export default function MusicPage() {
       <div style={{ marginBottom: '4rem' }}>
         <div style={{ 
           display: 'flex', 
+          flexWrap: 'wrap',
           justifyContent: 'space-between', 
           alignItems: 'baseline', 
           marginBottom: '1.5rem',
           borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.8rem'
+          paddingBottom: '0.8rem',
+          gap: '0.5rem'
         }}>
-          <h2 className="font-headline" style={{ fontSize: '1.4rem' }}>
+          <h2 className="font-headline" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.4rem)' }}>
             ACTIVE SATELLITE CHANNELS &amp; TRACKS ({filteredTracks.length})
           </h2>
           <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--accent-purple)' }}>
@@ -270,13 +272,15 @@ export default function MusicPage() {
       <div style={{ marginBottom: '4rem' }}>
         <div style={{ 
           display: 'flex', 
+          flexWrap: 'wrap',
           justifyContent: 'space-between', 
           alignItems: 'baseline', 
           marginBottom: '1.5rem',
           borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.8rem'
+          paddingBottom: '0.8rem',
+          gap: '0.5rem'
         }}>
-          <h2 className="font-headline" style={{ fontSize: '1.4rem' }}>
+          <h2 className="font-headline" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.4rem)' }}>
             OFFICIAL CASSETTE VAULT &amp; MIXTAPES
           </h2>
           <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -350,10 +354,10 @@ export default function MusicPage() {
         flexWrap: 'wrap',
         gap: '1.5rem'
       }}>
-        <div style={{ maxWidth: '650px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+        <div style={{ maxWidth: '650px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.2rem' }}>📼</span>
-            <h3 className="font-headline" style={{ fontSize: '1.2rem', margin: 0 }}>
+            <h3 className="font-headline" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)', margin: 0 }}>
               SUBTERRANEAN ANALOG TAPE DRONE // 432Hz
             </h3>
             <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--accent-lime)', border: '1px solid var(--accent-lime)', padding: '0.1rem 0.35rem' }}>
