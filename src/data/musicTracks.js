@@ -130,7 +130,7 @@ export function getThumbnail(videoId, quality = 'hq') {
  *  - station (playlist)     -> plays the whole playlist
  *  - single video           -> plays that video
  */
-export function getEmbedUrl(target, { autoplay = true, loop = false } = {}) {
+export function getEmbedUrl(target, { autoplay = true, loop = false, start = 0 } = {}) {
   if (!target) return '';
   const params = new URLSearchParams({
     rel: '0',
@@ -139,6 +139,9 @@ export function getEmbedUrl(target, { autoplay = true, loop = false } = {}) {
     enablejsapi: '1',
     autoplay: autoplay ? '1' : '0',
   });
+  if (typeof start === 'number' && start > 0) {
+    params.set('start', String(Math.floor(start)));
+  }
 
   const rawId = String(target.youtubeId || target.id || '').trim();
   const cleanId = rawId.replace(/^(playlist-|video-|pl-)/, '');
@@ -789,6 +792,20 @@ export function getYouTubeThumbnail(videoId, quality = 'hq', customThumbnail = n
 }
 
 /**
+ * Converts a duration string (e.g. "3:14", "1:02:15") or seconds into numeric seconds
+ */
+export function parseDurationSec(str) {
+  if (typeof str === 'number') return Math.max(0, Math.floor(str));
+  if (!str || typeof str !== 'string') return 0;
+  const parts = str.trim().split(':').map(Number);
+  if (parts.some(isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 1) return parts[0];
+  return 0;
+}
+
+/**
  * Normalizes an array of tracks or raw URL strings
  */
 export function normalizeTracks(tracks) {
@@ -807,9 +824,11 @@ export function normalizeTracks(tracks) {
         artist: 'YouTube Signal',
         genre: 'void',
         duration: '',
+        durationSec: 0,
         thumbnail: getThumbnail(id, 'mq')
       };
     }
+    const durSec = t.durationSec || parseDurationSec(t.duration) || 0;
     return {
       id: t.id || `${t.type || 'video'}-${t.youtubeId || idx}`,
       url: t.url || (t.youtubeId ? `https://www.youtube.com/watch?v=${t.youtubeId}` : ''),
@@ -820,8 +839,8 @@ export function normalizeTracks(tracks) {
       title: t.title || 'YouTube Audio',
       artist: t.artist || 'YouTube Signal',
       genre: t.genre || 'void',
-      duration: t.duration || formatDuration(t.durationSec),
-      durationSec: t.durationSec || 0,
+      duration: t.duration || formatDuration(durSec),
+      durationSec: durSec,
       thumbnail: t.thumbnail || getThumbnail(t.youtubeId, 'mq'),
       note: t.note
     };
@@ -947,6 +966,164 @@ export function playGenre(genre) {
     window.dispatchEvent(new CustomEvent('odd-play-track', {
       detail: { genre, autoPlay: true }
     }));
+  }
+}
+
+/**
+ * ============================================================================
+ * SYNCHRONIZED GLOBAL RADIO BROADCAST ENGINE
+ * ============================================================================
+ * Live continuous 24/7 subterranean audio stream.
+ * All listeners around the world hear the exact same track at the exact same
+ * second, synchronized to a deterministic UTC epoch clock.
+ */
+export const BROADCAST_PLAYLIST = [
+  {
+    id: 'void-01',
+    title: 'Sudno (Boris Ryzhy)',
+    artist: 'Molchat Doma',
+    genre: 'void',
+    youtubeId: 'HR5zpFs7YpY',
+    duration: '2:21',
+    durationSec: 141,
+    note: 'Belarusian Post-Punk / Coldwave Anthem'
+  },
+  {
+    id: 'void-02',
+    title: 'The Perfect Girl',
+    artist: 'Mareux',
+    genre: 'void',
+    youtubeId: 'sT13IBB4b5w',
+    duration: '3:14',
+    durationSec: 194,
+    note: 'Darkwave / Cyber-Goth Essential'
+  },
+  {
+    id: 'void-03',
+    title: 'Dark Beach',
+    artist: 'PASTEL GHOST',
+    genre: 'void',
+    youtubeId: '9bYvI7s-Jm4',
+    duration: '3:42',
+    durationSec: 222,
+    note: 'Ethereal Witch House / Dark Dream Pop'
+  },
+  {
+    id: 'void-04',
+    title: 'Gallowdance',
+    artist: 'Lebanon Hanover',
+    genre: 'void',
+    youtubeId: 'WPw7nlluRdc',
+    duration: '3:50',
+    durationSec: 230,
+    note: 'Minimal Wave / Post-Punk Heavyweight'
+  },
+  {
+    id: 'void-05',
+    title: 'Pain',
+    artist: 'Boy Harsher',
+    genre: 'void',
+    youtubeId: 'H1Zb4JmflU4',
+    duration: '7:18',
+    durationSec: 438,
+    note: 'Raw Industrial EBM / Dark Electronic'
+  },
+  {
+    id: 'feed-01',
+    title: 'Ghost',
+    artist: 'Machine Girl',
+    genre: 'feed',
+    youtubeId: 'qU2m766J68Q',
+    duration: '4:18',
+    durationSec: 258,
+    note: 'Digital Hardcore / Underground Breakcore'
+  },
+  {
+    id: 'feed-02',
+    title: 'Cyberia Lyr1',
+    artist: 'Sewerslvt',
+    genre: 'feed',
+    youtubeId: 'uL5Z4d7Hek4',
+    duration: '3:55',
+    durationSec: 235,
+    note: 'Atmospheric DNB / Cyber Breakcore'
+  },
+  {
+    id: 'feed-03',
+    title: "LET'S GO",
+    artist: 'TOKYOPILL',
+    genre: 'feed',
+    youtubeId: 'u_L70-W3a78',
+    duration: '2:30',
+    durationSec: 150,
+    note: 'Hyper-Glitch DNB / Web Rave'
+  },
+  {
+    id: 'drone-01',
+    title: "The Girl I Haven't Met",
+    artist: 'Kudasaibeats',
+    genre: 'drone',
+    youtubeId: 'XFknYJ6tN4E',
+    duration: '2:15',
+    durationSec: 135,
+    note: 'Dusty Cassette Tape Beat'
+  },
+  {
+    id: 'drone-02',
+    title: 'Affection',
+    artist: 'jinsang',
+    genre: 'drone',
+    youtubeId: 'e8M6v8W1W-c',
+    duration: '2:10',
+    durationSec: 130,
+    note: 'Vintage Analog Lo-Fi Tape Loop'
+  }
+];
+
+export const TOTAL_BROADCAST_SECONDS = BROADCAST_PLAYLIST.reduce((acc, t) => acc + t.durationSec, 0); // 2183s
+export const BROADCAST_START_EPOCH = 1704067200; // Jan 1 2024 00:00:00 UTC (Fixed reference anchor)
+
+/**
+ * Calculates the current live synchronized broadcast track and seek position.
+ * Returns identical track and second offset for any user worldwide at any given instant.
+ */
+export function getLiveBroadcastStatus(nowMs = Date.now()) {
+  const nowSec = Math.floor(nowMs / 1000);
+  const elapsed = nowSec - BROADCAST_START_EPOCH;
+  const cycleSec = ((elapsed % TOTAL_BROADCAST_SECONDS) + TOTAL_BROADCAST_SECONDS) % TOTAL_BROADCAST_SECONDS;
+
+  let accum = 0;
+  for (let i = 0; i < BROADCAST_PLAYLIST.length; i++) {
+    const track = BROADCAST_PLAYLIST[i];
+    if (cycleSec < accum + track.durationSec) {
+      const seekOffset = cycleSec - accum;
+      return {
+        track,
+        trackIndex: i,
+        seekSeconds: Math.floor(seekOffset),
+        remainingSeconds: track.durationSec - Math.floor(seekOffset),
+        cycleSeconds: cycleSec,
+        totalBroadcastSeconds: TOTAL_BROADCAST_SECONDS,
+        isLive: true
+      };
+    }
+    accum += track.durationSec;
+  }
+
+  return {
+    track: BROADCAST_PLAYLIST[0],
+    trackIndex: 0,
+    seekSeconds: 0,
+    remainingSeconds: BROADCAST_PLAYLIST[0].durationSec,
+    cycleSeconds: 0,
+    totalBroadcastSeconds: TOTAL_BROADCAST_SECONDS,
+    isLive: true
+  };
+}
+
+export function playLiveBroadcast() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('odd-play-live'));
   }
 }
 
