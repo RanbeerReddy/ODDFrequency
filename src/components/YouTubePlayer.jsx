@@ -5,7 +5,10 @@ import {
   parseYouTubeInput, 
   getYouTubeThumbnail,
   normalizeTracks,
-  fetchYouTubeMetadata
+  fetchYouTubeMetadata,
+  getEmbedUrl,
+  resolveTargetTrack,
+  catalog
 } from '../data/musicTracks.js';
 import { audioPlayerService } from '../utils/audioEngine.js';
 
@@ -22,10 +25,33 @@ export default function YouTubePlayer() {
     }
   });
 
-  // Combine default and user-added tracks
+  // Reactive dynamic catalog loaded via YouTube API
+  const [catalogTracks, setCatalogTracks] = useState([]);
+
+  useEffect(() => {
+    const unsub = catalog.subscribe(snap => {
+      if (snap.tracks && snap.tracks.length > 0) {
+        setCatalogTracks(snap.tracks);
+      }
+    });
+    catalog.load();
+    return unsub;
+  }, []);
+
+  // Combine dynamic catalog (or default fallback) and user-added tracks
   const allTracks = useMemo(() => {
-    return normalizeTracks([...DEFAULT_TRACKS, ...customTracks]);
-  }, [customTracks]);
+    const defaults = normalizeTracks(DEFAULT_TRACKS);
+    const combined = [...(catalogTracks.length > 0 ? catalogTracks : []), ...defaults, ...customTracks];
+    const seen = new Set();
+    const unique = [];
+    for (const t of combined) {
+      if (t && t.id && !seen.has(t.id)) {
+        seen.add(t.id);
+        unique.push(t);
+      }
+    }
+    return unique;
+  }, [catalogTracks, customTracks]);
 
   // Dynamic live metadata state populated by YouTube API
   const [liveMetadata, setLiveMetadata] = useState({});
@@ -39,17 +65,21 @@ export default function YouTubePlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isShuffle, setIsShuffle] = useState(true); // Default to shuffle/random for dynamic radio experience
-  const [volume, setVolume] = useState(0.7);
+  const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [embedAutoplay, setEmbedAutoplay] = useState(false);
+  const [isTheatre, setIsTheatre] = useState(false);
+  const [showScanlines, setShowScanlines] = useState(true);
   
   // Synth Drone Mode (original procedural tape drone fallback)
   const [isSynthDroneMode, setIsSynthDroneMode] = useState(false);
 
-  // UI Panels
+  // UI Panels - unified cyber-hardware deck
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [showVideoMonitor, setShowVideoMonitor] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isDeckVisible, setIsDeckVisible] = useState(true);
   const [drawerTab, setDrawerTab] = useState('tracklist'); // 'tracklist', 'genres', 'add'
   const [feedbackToast, setFeedbackToast] = useState(null);
 
@@ -61,19 +91,27 @@ export default function YouTubePlayer() {
   const [copiedCode, setCopiedCode] = useState(false);
 
   // --- Refs ---
+  const iframeRef = useRef(null);
   const playerRef = useRef(null);
   const progressTimerRef = useRef(null);
+  const handlePlayNextRef = useRef(null);
 
   // Filtered tracks based on selected genre
   const genreTracks = useMemo(() => {
     if (activeGenre === 'all') return allTracks;
-    return allTracks.filter(t => t.genre === activeGenre);
+    return allTracks.filter(t => t.genre === activeGenre || t.stationId === activeGenre);
   }, [allTracks, activeGenre]);
 
-  // Active track object
+  // Active track object resolved with fallback support
   const currentTrack = useMemo(() => {
-    return allTracks.find(t => t.id === currentTrackId) || genreTracks[0] || allTracks[0];
+    return resolveTargetTrack(currentTrackId, allTracks) || genreTracks[0] || allTracks[0];
   }, [allTracks, currentTrackId, genreTracks]);
+
+  // Computed embed URL for active track
+  const embedUrl = useMemo(() => {
+    if (!currentTrack) return '';
+    return getEmbedUrl(currentTrack, { autoplay: embedAutoplay });
+  }, [currentTrack, embedAutoplay]);
 
   // Toast Helper
   const showPlayerToast = useCallback((msg) => {
@@ -121,7 +159,7 @@ export default function YouTubePlayer() {
     }
   }, [currentTrackId]);
 
-  // Dynamically fetch metadata via YouTube oEmbed for any track without hardcoded details
+  // Dynamically fetch metadata via YouTube Data API / oEmbed for any track without hardcoded details
   useEffect(() => {
     allTracks.forEach(track => {
       if (track.autoFetch && !liveMetadata[track.id]) {
@@ -131,9 +169,10 @@ export default function YouTubePlayer() {
               ...prev,
               [track.id]: {
                 ...prev[track.id],
-                title: meta.title,
-                artist: meta.artist,
-                thumbnail: meta.thumbnail
+                title: meta.title || prev[track.id]?.title,
+                artist: meta.artist || prev[track.id]?.artist,
+                thumbnail: meta.thumbnail || prev[track.id]?.thumbnail,
+                duration: meta.duration || prev[track.id]?.duration
               }
             }));
           }
@@ -142,9 +181,42 @@ export default function YouTubePlayer() {
     });
   }, [allTracks, liveMetadata]);
 
+  // Direct command dispatcher to YouTube iframe and YT.Player API
+  const sendPlayerCommand = useCallback((func, args = []) => {
+    const argsArray = Array.isArray(args) ? args : [args];
+
+    // Priority 1: YT.Player API if mounted
+    if (playerRef.current && typeof playerRef.current[func] === 'function') {
+      try {
+        playerRef.current[func](...argsArray);
+        return true;
+      } catch {
+        // Fallback to postMessage
+      }
+    }
+
+    // Priority 2: Standard YouTube postMessage to iframe window
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: func,
+            args: argsArray
+          }),
+          '*'
+        );
+        return true;
+      } catch (err) {
+        console.warn('postMessage to YouTube iframe failed:', err);
+      }
+    }
+    return false;
+  }, []);
+
   // Playback of a specific Track ID
   const playTrackById = useCallback((trackId, autoPlay = true) => {
-    const targetTrack = allTracks.find(t => t.id === trackId);
+    const targetTrack = resolveTargetTrack(trackId, allTracks);
     if (!targetTrack) return;
 
     if (isSynthDroneMode) {
@@ -152,41 +224,35 @@ export default function YouTubePlayer() {
       setIsSynthDroneMode(false);
     }
 
-    setCurrentTrackId(trackId);
+    setCurrentTrackId(targetTrack.id);
     setCurrentTime(0);
+    setIsDeckVisible(true);
+    setIsMinimized(false);
 
-    if (playerRef.current) {
-      try {
-        if (targetTrack.type === 'playlist') {
-          if (autoPlay) {
-            playerRef.current.loadPlaylist({ list: targetTrack.youtubeId, listType: 'playlist' });
-            setIsPlaying(true);
-          } else {
-            playerRef.current.cuePlaylist({ list: targetTrack.youtubeId, listType: 'playlist' });
-          }
-        } else {
-          if (autoPlay) {
-            playerRef.current.loadVideoById(targetTrack.youtubeId);
-            setIsPlaying(true);
-          } else {
-            playerRef.current.cueVideoById(targetTrack.youtubeId);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load track in YouTube player:', err);
+    if (autoPlay) {
+      setEmbedAutoplay(true);
+      setIsPlaying(true);
+      if (targetTrack.type === 'playlist') {
+        sendPlayerCommand('loadPlaylist', [{ list: targetTrack.youtubeId || targetTrack.playlistId, listType: 'playlist' }]);
+      } else {
+        sendPlayerCommand('loadVideoById', [targetTrack.youtubeId]);
+      }
+      sendPlayerCommand('playVideo');
+      sendPlayerCommand('unMute');
+      sendPlayerCommand('setVolume', [Math.round(volume * 100)]);
+    } else {
+      if (targetTrack.type === 'playlist') {
+        sendPlayerCommand('cuePlaylist', [{ list: targetTrack.youtubeId || targetTrack.playlistId, listType: 'playlist' }]);
+      } else {
+        sendPlayerCommand('cueVideoById', [targetTrack.youtubeId]);
       }
     }
-  }, [allTracks, isSynthDroneMode]);
+  }, [allTracks, isSynthDroneMode, sendPlayerCommand, volume]);
 
   // Navigation: Next & Previous
   const handlePlayNext = useCallback(() => {
-    if (currentTrack?.type === 'playlist' && playerRef.current && typeof playerRef.current.nextVideo === 'function') {
-      try {
-        playerRef.current.nextVideo();
-        return;
-      } catch {
-        // fallback
-      }
+    if (currentTrack?.type === 'playlist') {
+      sendPlayerCommand('nextVideo');
     }
 
     if (genreTracks.length === 0) return;
@@ -202,21 +268,17 @@ export default function YouTubePlayer() {
       const nextTrack = genreTracks[nextIndex];
       if (nextTrack) playTrackById(nextTrack.id, true);
     }
-  }, [genreTracks, isShuffle, currentTrackId, playTrackById, currentTrack?.type]);
+  }, [currentTrack?.type, genreTracks, isShuffle, currentTrackId, playTrackById, sendPlayerCommand]);
 
   const handlePlayPrev = useCallback(() => {
-    if (currentTime > 4 && playerRef.current?.seekTo) {
-      playerRef.current.seekTo(0);
+    if (currentTime > 4) {
+      sendPlayerCommand('seekTo', [0, true]);
+      setCurrentTime(0);
       return;
     }
 
-    if (currentTrack?.type === 'playlist' && playerRef.current && typeof playerRef.current.previousVideo === 'function') {
-      try {
-        playerRef.current.previousVideo();
-        return;
-      } catch {
-        // fallback
-      }
+    if (currentTrack?.type === 'playlist') {
+      sendPlayerCommand('previousVideo');
     }
 
     if (genreTracks.length === 0) return;
@@ -225,16 +287,87 @@ export default function YouTubePlayer() {
     const prevIndex = (currentIndex - 1 + genreTracks.length) % genreTracks.length;
     const prevTrack = genreTracks[prevIndex];
     if (prevTrack) playTrackById(prevTrack.id, true);
-  }, [genreTracks, currentTime, currentTrackId, playTrackById, currentTrack?.type]);
+  }, [currentTime, currentTrack?.type, genreTracks, currentTrackId, playTrackById, sendPlayerCommand]);
 
-  // Stable callback ref for next track
-  const handlePlayNextRef = useRef(handlePlayNext);
   useEffect(() => {
     handlePlayNextRef.current = handlePlayNext;
   }, [handlePlayNext]);
 
   // -------------------------------------------------------------
-  // YouTube IFrame API Loader & Initialization
+  // YouTube postMessage Listener (Real-time sync)
+  // -------------------------------------------------------------
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (!e.data) return;
+      let data = e.data;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          return;
+        }
+      }
+      if (!data || typeof data !== 'object') return;
+
+      if (data.event === 'onStateChange') {
+        const state = data.info;
+        if (state === 1) { // PLAYING
+          setIsPlaying(true);
+          setIsBuffering(false);
+        } else if (state === 2) { // PAUSED
+          setIsPlaying(false);
+          setIsBuffering(false);
+        } else if (state === 3) { // BUFFERING
+          setIsBuffering(true);
+        } else if (state === 0) { // ENDED
+          setIsPlaying(false);
+          setIsBuffering(false);
+          handlePlayNextRef.current?.();
+        }
+      }
+
+      if (data.event === 'infoDelivery' && data.info) {
+        const info = data.info;
+        if (typeof info.currentTime === 'number') {
+          setCurrentTime(info.currentTime);
+        }
+        if (typeof info.duration === 'number' && info.duration > 0) {
+          setDuration(info.duration);
+        }
+        if (info.playerState === 1) {
+          setIsPlaying(true);
+          setIsBuffering(false);
+        } else if (info.playerState === 2) {
+          setIsPlaying(false);
+          setIsBuffering(false);
+        }
+        if (info.videoData && currentTrackId) {
+          const { title, author, video_id } = info.videoData;
+          if (title || author) {
+            setLiveMetadata(prev => {
+              const curr = prev[currentTrackId] || {};
+              if (curr.title === title && curr.artist === author) return prev;
+              return {
+                ...prev,
+                [currentTrackId]: {
+                  ...curr,
+                  title: title || curr.title,
+                  artist: author || curr.artist,
+                  thumbnail: video_id ? `https://img.youtube.com/vi/${video_id}/mqdefault.jpg` : curr.thumbnail
+                }
+              };
+            });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [currentTrackId]);
+
+  // -------------------------------------------------------------
+  // YouTube IFrame API Loader & Background Instance Attachment
   // -------------------------------------------------------------
   useEffect(() => {
     if (!window.YT) {
@@ -247,63 +380,47 @@ export default function YouTubePlayer() {
 
     const initPlayer = () => {
       if (playerRef.current || !window.YT || !window.YT.Player) return;
+      const iframe = iframeRef.current;
+      if (!iframe) return;
 
-      const element = document.getElementById(PLAYER_ELEMENT_ID);
-      if (!element) return;
-
-      playerRef.current = new window.YT.Player(PLAYER_ELEMENT_ID, {
-        height: '100%',
-        width: '100%',
-        videoId: currentTrack?.type === 'playlist' ? undefined : currentTrack?.youtubeId,
-        playerVars: {
-          autoplay: 0,
-          controls: 1,
-          disablekb: 0,
-          enablejsapi: 1,
-          fs: 1,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-          origin: window.location.origin
-        },
-        events: {
-          onReady: (event) => {
-            event.target.setVolume(volume * 100);
-            if (isMuted) event.target.mute();
-            if (currentTrack?.type === 'playlist') {
-              event.target.cuePlaylist({ list: currentTrack.youtubeId, listType: 'playlist' });
+      try {
+        playerRef.current = new window.YT.Player(iframe, {
+          events: {
+            onReady: (event) => {
+              event.target.setVolume(Math.round(volume * 100));
+              if (isMuted) event.target.mute();
+            },
+            onStateChange: (event) => {
+              if (!window.YT) return;
+              const state = event.data;
+              if (state === window.YT.PlayerState.PLAYING) {
+                setIsPlaying(true);
+                setIsBuffering(false);
+                const dur = event.target.getDuration?.();
+                if (dur) setDuration(dur);
+                syncLivePlayerInfo(event.target);
+              } else if (state === window.YT.PlayerState.PAUSED) {
+                setIsPlaying(false);
+                setIsBuffering(false);
+                syncLivePlayerInfo(event.target);
+              } else if (state === window.YT.PlayerState.BUFFERING) {
+                setIsBuffering(true);
+              } else if (state === window.YT.PlayerState.ENDED) {
+                setIsPlaying(false);
+                handlePlayNextRef.current?.();
+              }
+            },
+            onError: () => {
+              showPlayerToast('Track unavailable for embed. Rolling next track...');
+              setTimeout(() => {
+                handlePlayNextRef.current?.();
+              }, 1200);
             }
-          },
-          onStateChange: (event) => {
-            if (!window.YT) return;
-            const state = event.data;
-            if (state === window.YT.PlayerState.PLAYING) {
-              setIsPlaying(true);
-              setIsBuffering(false);
-              const dur = event.target.getDuration();
-              if (dur) setDuration(dur);
-              syncLivePlayerInfo(event.target);
-            } else if (state === window.YT.PlayerState.PAUSED) {
-              setIsPlaying(false);
-              setIsBuffering(false);
-              syncLivePlayerInfo(event.target);
-            } else if (state === window.YT.PlayerState.BUFFERING) {
-              setIsBuffering(true);
-              syncLivePlayerInfo(event.target);
-            } else if (state === window.YT.PlayerState.ENDED) {
-              setIsPlaying(false);
-              handlePlayNextRef.current();
-            }
-          },
-          onError: () => {
-            showPlayerToast('Track unavailable for embed. Rolling next track...');
-            setTimeout(() => {
-              handlePlayNextRef.current();
-            }, 800);
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.warn('Could not initialize YT.Player instance on iframe:', err);
+      }
     };
 
     if (window.YT && window.YT.Player) {
@@ -315,11 +432,7 @@ export default function YouTubePlayer() {
         initPlayer();
       };
     }
-
-    return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    };
-  }, [currentTrack?.type, currentTrack?.youtubeId, isMuted, showPlayerToast, volume]);
+  }, [isMuted, showPlayerToast, syncLivePlayerInfo, volume]);
 
   // Track progress updater
   useEffect(() => {
@@ -328,8 +441,8 @@ export default function YouTubePlayer() {
         if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
           try {
             const cur = playerRef.current.getCurrentTime();
-            const dur = playerRef.current.getDuration();
-            setCurrentTime(cur || 0);
+            const dur = playerRef.current.getDuration?.();
+            if (typeof cur === 'number') setCurrentTime(cur);
             if (dur && dur > 0) setDuration(dur);
             syncLivePlayerInfo(playerRef.current);
           } catch {
@@ -350,7 +463,7 @@ export default function YouTubePlayer() {
   const handleRollRandomGenreTrack = useCallback((genre = activeGenre) => {
     const list = genre === 'all' 
       ? allTracks 
-      : allTracks.filter(t => t.genre === genre);
+      : allTracks.filter(t => t.genre === genre || t.stationId === genre);
 
     if (list.length === 0) {
       showPlayerToast('No tracks found in this frequency.');
@@ -370,6 +483,23 @@ export default function YouTubePlayer() {
     }
   }, [activeGenre, allTracks, currentTrackId, playTrackById, showPlayerToast]);
 
+  // Listen for global play requests from external pages (e.g. MusicPage)
+  useEffect(() => {
+    const handleGlobalPlay = (e) => {
+      const { trackId, genre, autoPlay = true } = e.detail || {};
+      if (trackId) {
+        playTrackById(trackId, autoPlay);
+      } else if (genre) {
+        handleRollRandomGenreTrack(genre);
+      }
+    };
+
+    window.addEventListener('odd-play-track', handleGlobalPlay);
+    return () => {
+      window.removeEventListener('odd-play-track', handleGlobalPlay);
+    };
+  }, [playTrackById, handleRollRandomGenreTrack]);
+
   // Toggle Play / Pause
   const handleTogglePlay = () => {
     if (isSynthDroneMode) {
@@ -383,16 +513,15 @@ export default function YouTubePlayer() {
       return;
     }
 
-    if (!playerRef.current || typeof playerRef.current.playVideo !== 'function') {
-      showPlayerToast('Connecting to YouTube signal...');
-      return;
-    }
-
     if (isPlaying) {
-      playerRef.current.pauseVideo();
+      sendPlayerCommand('pauseVideo');
       setIsPlaying(false);
     } else {
-      playerRef.current.playVideo();
+      setEmbedAutoplay(true);
+      setIsDeckVisible(true);
+      sendPlayerCommand('playVideo');
+      sendPlayerCommand('unMute');
+      sendPlayerCommand('setVolume', [Math.round(volume * 100)]);
       setIsPlaying(true);
     }
   };
@@ -405,9 +534,9 @@ export default function YouTubePlayer() {
 
     if (isSynthDroneMode) {
       audioPlayerService.setVolume(val);
-    } else if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
-      playerRef.current.setVolume(val * 100);
-      if (isMuted && val > 0) playerRef.current.unMute();
+    } else {
+      sendPlayerCommand('setVolume', [Math.round(val * 100)]);
+      if (isMuted && val > 0) sendPlayerCommand('unMute');
     }
   };
 
@@ -417,12 +546,12 @@ export default function YouTubePlayer() {
 
     if (isSynthDroneMode) {
       audioPlayerService.toggleMute();
-    } else if (playerRef.current) {
+    } else {
       if (nextMuted) {
-        playerRef.current.mute?.();
+        sendPlayerCommand('mute');
       } else {
-        playerRef.current.unMute?.();
-        playerRef.current.setVolume?.(volume * 100);
+        sendPlayerCommand('unMute');
+        sendPlayerCommand('setVolume', [Math.round(volume * 100)]);
       }
     }
   };
@@ -431,9 +560,7 @@ export default function YouTubePlayer() {
   const handleSeek = (e) => {
     const seekSec = parseFloat(e.target.value);
     setCurrentTime(seekSec);
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-      playerRef.current.seekTo(seekSec, true);
-    }
+    sendPlayerCommand('seekTo', [seekSec, true]);
   };
 
   // Genre Change Handler
@@ -537,265 +664,314 @@ export default function YouTubePlayer() {
   return (
     <>
       {/* ---------------------------------------------------------
-          FLOATING RETRO-CYBER VIDEO MONITOR (Toggleable)
+          CORNER LAUNCHER CHIP (When deck is closed / hidden)
           --------------------------------------------------------- */}
-      <div 
-        className={`yt-video-monitor ${showVideoMonitor ? 'is-visible' : 'is-hidden'}`}
-        aria-hidden={!showVideoMonitor}
-      >
-        <div className="yt-monitor-header">
-          <div className="yt-monitor-title">
-            <span className="yt-blinking-dot"></span>
-            ODD FREQUENCY // CRT VISUAL MONITOR [CH: {activeGenreMeta.tag}]
-          </div>
-          <button 
-            className="yt-monitor-close"
-            onClick={() => setShowVideoMonitor(false)}
-            title="Minimize Video Monitor"
-            aria-label="Close video monitor"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* The YouTube Iframe container stays mounted here */}
-        <div className="yt-monitor-screen">
-          <div className="yt-crt-scanlines" aria-hidden="true"></div>
-          <div id={PLAYER_ELEMENT_ID} className="yt-iframe-embed"></div>
-        </div>
-
-        <div className="yt-monitor-footer">
-          <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-            {(liveMetadata[currentTrack?.id]?.title || currentTrack?.title)} — {(liveMetadata[currentTrack?.id]?.artist || currentTrack?.artist)}
-          </span>
-          <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--accent-lime)' }}>
-            {isPlaying ? '● BROADCASTING' : '○ PAUSED'}
-          </span>
-        </div>
-      </div>
+      {!isDeckVisible && (
+        <button 
+          type="button"
+          className="yt-deck-launcher-chip"
+          onClick={() => { setIsDeckVisible(true); setIsMinimized(false); }}
+          title="Open ODD FREQUENCY Cyber Deck"
+        >
+          <span className={`yt-deck-led ${isPlaying ? 'is-playing' : ''}`}></span>
+          <span className="font-mono">ODD FREQUENCY // SOUND DECK</span>
+          <span>{isPlaying ? '▶' : '❚❚'}</span>
+        </button>
+      )}
 
       {/* ---------------------------------------------------------
-          MAIN PERSISTENT BOTTOM SOUND DOCK
+          UNIFIED CYBER-HARDWARE SOUND DECK & VIDEO PLAYER
+          (Matching user's reference hardware deck layout)
           --------------------------------------------------------- */}
-      <aside 
-        className="yt-player-dock"
-        aria-label="Odd Frequency Sound Deck"
-      >
-        {/* Progress Bar (Scrubber) on top of the dock */}
-        {!isSynthDroneMode && duration > 0 && (
-          <div className="yt-dock-progress-wrapper">
-            <input 
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="yt-dock-progress-bar"
-              aria-label="Track playback position"
-            />
-          </div>
-        )}
-
-        <div className="yt-dock-main-row">
-          {/* Left: Thumbnail & Track Info */}
-          <div 
-            className="yt-track-capsule"
-            onClick={() => setIsDrawerOpen(prev => !prev)}
-            title="Click to view full playlist and genres"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && setIsDrawerOpen(prev => !prev)}
-          >
-            <div className="yt-thumbnail-box">
-              {isSynthDroneMode ? (
-                <div className="yt-synth-tape-icon">📼</div>
-              ) : (
-                <img 
-                  src={getYouTubeThumbnail(currentTrack?.youtubeId, currentTrack?.type, liveMetadata[currentTrack?.id]?.thumbnail || currentTrack?.thumbnail)} 
-                  alt={liveMetadata[currentTrack?.id]?.title || currentTrack?.title || 'Odd Frequency'}
-                  className="yt-track-thumb-img"
-                  loading="lazy"
-                />
-              )}
-              {isPlaying && (
-                <div className="yt-mini-eq" aria-hidden="true">
-                  <span></span><span></span><span></span>
-                </div>
-              )}
+      {isDeckVisible && (
+        <aside 
+          className={`yt-cyber-deck ${isTheatre ? 'is-theatre' : ''} ${isMinimized ? 'is-minimized' : ''}`}
+          aria-label="Odd Frequency Sound Deck"
+        >
+          {/* Top Titanium Beveled Header Rim */}
+          <div className="yt-deck-header">
+            <div className="yt-deck-header-title">
+              <span className={`yt-deck-led ${isPlaying ? 'is-playing' : ''}`}></span>
+              <span>ODD FREQUENCY // {activeGenreMeta.label || 'SOUND DECK'}</span>
             </div>
 
-            <div className="yt-track-info-col">
-              <div className="yt-dock-title-marquee">
-                <span className="yt-dock-title-text">
-                  {isSynthDroneMode ? 'ANALOG TAPE DRONE // 432Hz' : (liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
-                </span>
-              </div>
-              <div className="yt-dock-meta-row">
-                <span className="yt-genre-badge">
-                  {isSynthDroneMode ? 'SYNTH' : activeGenreMeta.tag}
-                </span>
-                <span className="yt-dock-artist">
-                  {isSynthDroneMode ? 'ODD FREQUENCY ENGINE' : (liveMetadata[currentTrack?.id]?.artist || currentTrack?.artist)}
-                </span>
-                {!isSynthDroneMode && (
-                  <span className="yt-dock-timer">
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Center: Transport Playback Controls */}
-          <div className="yt-transport-controls">
-            {/* Random / Shuffle Button */}
-            <button 
-              className={`yt-control-btn ${isShuffle ? 'active-glow' : ''}`}
-              onClick={() => {
-                const nextShuffle = !isShuffle;
-                setIsShuffle(nextShuffle);
-                showPlayerToast(nextShuffle ? 'Random / Shuffle Mode: ON' : 'Shuffle Mode: OFF');
-              }}
-              title={isShuffle ? 'Shuffle Active (Random songs)' : 'Shuffle Disabled'}
-              aria-label="Toggle shuffle"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="16 3 21 3 21 8"></polyline>
-                <line x1="4" y1="20" x2="21" y2="3"></line>
-                <polyline points="21 16 21 21 16 21"></polyline>
-                <line x1="15" y1="15" x2="21" y2="21"></line>
-                <line x1="4" y1="4" x2="9" y2="9"></line>
-              </svg>
-            </button>
-
-            {/* Previous Track */}
-            <button 
-              className="yt-control-btn"
-              onClick={handlePlayPrev}
-              title="Previous Track"
-              aria-label="Previous track"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="19 20 9 12 19 4 19 20"></polygon>
-                <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" strokeWidth="2"></line>
-              </svg>
-            </button>
-
-            {/* Main Play / Pause Button */}
-            <button 
-              className="yt-play-main-btn"
-              onClick={handleTogglePlay}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isBuffering ? (
-                <div className="yt-spinner"></div>
-              ) : isPlaying ? (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 2 }}>
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-              )}
-            </button>
-
-            {/* Next Track */}
-            <button 
-              className="yt-control-btn"
-              onClick={handlePlayNext}
-              title="Next Track"
-              aria-label="Next track"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" strokeWidth="2"></line>
-              </svg>
-            </button>
-
-            {/* Quick Roll Random Song from Genre */}
-            <button 
-              className="yt-control-btn yt-dice-btn"
-              onClick={() => handleRollRandomGenreTrack(activeGenre)}
-              title={`Roll Random Song in ${activeGenreMeta.label}`}
-              aria-label="Roll random song in genre"
-            >
-              🎲
-            </button>
-          </div>
-
-          {/* Right: Volume, Video Monitor Toggle, Drawer Toggle */}
-          <div className="yt-right-controls">
-            {/* Toggle CRT Video Monitor */}
-            <button 
-              className={`yt-action-icon-btn ${showVideoMonitor ? 'is-active' : ''}`}
-              onClick={() => setShowVideoMonitor(prev => !prev)}
-              title={showVideoMonitor ? 'Hide Video Monitor' : 'Show YouTube Video Monitor'}
-              aria-label="Toggle video monitor"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                <polyline points="17 2 12 7 7 2"></polyline>
-              </svg>
-            </button>
-
-            {/* Volume & Mute */}
-            <div className="yt-volume-cluster">
+            <div className="yt-deck-header-actions">
               <button 
-                className="yt-mute-btn"
-                onClick={handleToggleMute}
-                aria-label={isMuted ? 'Unmute' : 'Mute'}
-                title={isMuted ? 'Unmute' : 'Mute'}
+                type="button"
+                className="yt-deck-action-btn"
+                onClick={() => setShowScanlines(prev => !prev)}
+                title={showScanlines ? 'Disable CRT Scanlines' : 'Enable CRT Scanlines'}
               >
-                {isMuted || volume === 0 ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <line x1="23" y1="9" x2="17" y2="15"></line>
-                    <line x1="17" y1="9" x2="23" y2="15"></line>
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  </svg>
-                )}
+                {showScanlines ? 'CRT' : 'CLEAR'}
               </button>
 
-              <input 
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="yt-vol-slider"
-                title={`Volume: ${Math.round(volume * 100)}%`}
-                aria-label="Volume slider"
-              />
+              <button 
+                type="button"
+                className="yt-deck-action-btn"
+                onClick={() => setIsTheatre(prev => !prev)}
+                title={isTheatre ? 'Standard Deck Size' : 'Widescreen Theatre Mode'}
+              >
+                {isTheatre ? 'STD' : 'THEATRE'}
+              </button>
+
+              <button 
+                type="button"
+                className="yt-deck-action-btn"
+                onClick={() => setIsMinimized(prev => !prev)}
+                title={isMinimized ? 'Expand Deck' : 'Minimize to Titlebar'}
+                aria-label="Toggle deck expansion"
+              >
+                {isMinimized ? '▲' : '—'}
+              </button>
+
+              <button 
+                type="button"
+                className="yt-deck-action-btn yt-deck-close-btn"
+                onClick={() => setIsDeckVisible(false)}
+                title="Hide to Corner Chip"
+                aria-label="Hide sound deck"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+
+          {/* Minimized Compact Bar */}
+          {isMinimized && (
+            <div className="yt-deck-minimized-row" onClick={() => setIsMinimized(false)}>
+              <span className="yt-minimized-title font-mono">
+                {isPlaying ? '▶' : '❚❚'} {(liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
+              </span>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <button 
+                  type="button" 
+                  className="yt-deck-action-btn"
+                  onClick={(e) => { e.stopPropagation(); handleTogglePlay(); }}
+                >
+                  {isPlaying ? 'PAUSE' : 'PLAY'}
+                </button>
+                <button 
+                  type="button" 
+                  className="yt-deck-action-btn"
+                  onClick={(e) => { e.stopPropagation(); setIsMinimized(false); }}
+                >
+                  EXPAND ▲
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Deck Body: Left Video Screen, Right Controls & Scrubber */}
+          <div className="yt-deck-body">
+            {/* Left Column: Framed Inset Video Screen */}
+            <div className="yt-deck-screen-box">
+              {showScanlines && <div className="yt-crt-scanlines" aria-hidden="true"></div>}
+              {isSynthDroneMode ? (
+                <div className="yt-deck-synth-visual">
+                  <div className="yt-synth-tape-anim">📼</div>
+                  <div className="font-mono yt-synth-text">432Hz ANALOG TAPE DRONE</div>
+                  <div className="yt-synth-eq-bars">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  id={PLAYER_ELEMENT_ID}
+                  className="yt-iframe-embed"
+                  src={embedUrl}
+                  title="Odd Frequency Visual Signal"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="eager"
+                />
+              )}
             </div>
 
-            {/* Playlist / Deck Drawer Trigger */}
-            <button 
-              className={`yt-drawer-toggle-btn ${isDrawerOpen ? 'is-active' : ''}`}
-              onClick={() => setIsDrawerOpen(prev => !prev)}
-              aria-label="Open tracklist and playlist manager"
-              title="Tracklist, Genres & Add Songs"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-              </svg>
-              <span className="yt-drawer-btn-label">TRACKS</span>
-            </button>
+            {/* Right Column: Track Title, Artist, Time + Square Handle Scrubber, Square Hardware Buttons */}
+            <div className="yt-deck-info-col">
+              {/* Meta: Title & Artist */}
+              <div className="yt-deck-meta-block">
+                <div className="yt-deck-title" title={liveMetadata[currentTrack?.id]?.title || currentTrack?.title}>
+                  {isSynthDroneMode ? 'Analog Tape Drone // 432Hz' : (liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
+                </div>
+                <div className="yt-deck-artist-row">
+                  <span className="yt-deck-artist">
+                    {isSynthDroneMode ? 'Odd Frequency Procedural Audio' : (liveMetadata[currentTrack?.id]?.artist || currentTrack?.artist)}
+                  </span>
+                  <span className="yt-deck-genre-tag">
+                    {isSynthDroneMode ? 'SYNTH' : activeGenreMeta.tag}
+                  </span>
+                </div>
+              </div>
+
+              {/* Scrubber & Time Display with Silver Metallic Square Knob */}
+              <div className="yt-deck-timeline-row">
+                <span className="yt-deck-time-display font-mono">
+                  {formatTime(currentTime)}
+                </span>
+                <div className="yt-deck-slider-rail">
+                  <input 
+                    type="range"
+                    min="0"
+                    max={duration || 100}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="yt-deck-scrubber"
+                    aria-label="Track playback position"
+                  />
+                </div>
+                <span className="yt-deck-dur-display font-mono">
+                  {formatTime(duration)}
+                </span>
+              </div>
+
+              {/* Hardware Button Row: [ 🔀 ] [ |◀ ] [ ▶ ] [ ▶| ] + Volume + Tracks */}
+              <div className="yt-deck-controls-row">
+                <div className="yt-hardware-button-group">
+                  {/* Shuffle Button */}
+                  <button 
+                    type="button"
+                    className={`yt-hardware-btn ${isShuffle ? 'is-active' : ''}`}
+                    onClick={() => {
+                      const next = !isShuffle;
+                      setIsShuffle(next);
+                      showPlayerToast(next ? 'Shuffle Mode: ON' : 'Shuffle Mode: OFF');
+                    }}
+                    title={isShuffle ? 'Shuffle Active (Random songs)' : 'Shuffle Disabled'}
+                    aria-label="Toggle shuffle"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="16 3 21 3 21 8"></polyline>
+                      <line x1="4" y1="20" x2="21" y2="3"></line>
+                      <polyline points="21 16 21 21 16 21"></polyline>
+                      <line x1="15" y1="15" x2="21" y2="21"></line>
+                      <line x1="4" y1="4" x2="9" y2="9"></line>
+                    </svg>
+                  </button>
+
+                  {/* Previous Track */}
+                  <button 
+                    type="button"
+                    className="yt-hardware-btn"
+                    onClick={handlePlayPrev}
+                    title="Previous Track"
+                    aria-label="Previous track"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                      <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" strokeWidth="2.5"></line>
+                    </svg>
+                  </button>
+
+                  {/* Main Play / Pause Button */}
+                  <button 
+                    type="button"
+                    className={`yt-hardware-btn play-main ${isPlaying ? 'is-playing' : ''}`}
+                    onClick={handleTogglePlay}
+                    title={isPlaying ? 'Pause' : 'Play'}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  >
+                    {isBuffering ? (
+                      <div className="yt-spinner-sm"></div>
+                    ) : isPlaying ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16" rx="1" />
+                        <rect x="14" y="4" width="4" height="16" rx="1" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 2 }}>
+                        <polygon points="6 3 20 12 6 21 6 3" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Next Track */}
+                  <button 
+                    type="button"
+                    className="yt-hardware-btn"
+                    onClick={handlePlayNext}
+                    title="Next Track"
+                    aria-label="Next track"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                      <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" strokeWidth="2.5"></line>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Auxiliary Controls: Volume, Dice & Tracks Drawer */}
+                <div className="yt-aux-controls-group">
+                  <div className="yt-aux-vol-wrapper">
+                    <button 
+                      type="button"
+                      className="yt-hardware-btn yt-vol-btn"
+                      onClick={handleToggleMute}
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                      aria-label={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted || volume === 0 ? (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                          <line x1="23" y1="9" x2="17" y2="15"></line>
+                          <line x1="17" y1="9" x2="23" y2="15"></line>
+                        </svg>
+                      ) : (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                      )}
+                    </button>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="yt-aux-vol-slider"
+                      title={`Volume: ${Math.round(volume * 100)}%`}
+                      aria-label="Volume slider"
+                    />
+                  </div>
+
+                  {/* Dice Roll for Random Song */}
+                  <button 
+                    type="button"
+                    className="yt-hardware-btn yt-dice-btn"
+                    onClick={() => handleRollRandomGenreTrack(activeGenre)}
+                    title={`Roll Random Song in ${activeGenreMeta.label}`}
+                    aria-label="Roll random song"
+                  >
+                    🎲
+                  </button>
+
+                  {/* Drawer Button */}
+                  <button 
+                    type="button"
+                    className={`yt-tracks-btn ${isDrawerOpen ? 'is-active' : ''}`}
+                    onClick={() => setIsDrawerOpen(prev => !prev)}
+                    title="Tracklist, Stations & Mixtapes"
+                    aria-label="Open tracklist and playlist manager"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="8" y1="6" x2="21" y2="6"></line>
+                      <line x1="8" y1="12" x2="21" y2="12"></line>
+                      <line x1="8" y1="18" x2="21" y2="18"></line>
+                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>TRACKS</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      )}
 
       {/* ---------------------------------------------------------
           EXPANDED SOUND DECK DRAWER / MIXTAPE MODAL
