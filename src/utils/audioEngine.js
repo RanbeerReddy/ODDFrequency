@@ -47,7 +47,6 @@ class AmbientAudioEngine {
     if (!this.ctx) return;
     this.stopActiveRhythms();
 
-    const now = this.ctx.currentTime;
     this.isPlaying = true;
 
     if (stationId === 'house') {
@@ -325,9 +324,9 @@ class AmbientAudioEngine {
           gain.gain.setValueAtTime(gain.gain.value, now);
           gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
           setTimeout(() => {
-            try { osc.stop(); osc.disconnect(); } catch (e) {}
+            try { osc.stop(); osc.disconnect(); } catch { /* noop */ }
           }, 350);
-        } catch (e) {}
+        } catch { /* noop */ }
       });
       this.activeNodes = [];
     }
