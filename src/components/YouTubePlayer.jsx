@@ -8,7 +8,8 @@ import {
   fetchYouTubeMetadata,
   getEmbedUrl,
   resolveTargetTrack,
-  catalog
+  catalog,
+  getLiveBroadcastStatus
 } from '../data/musicTracks.js';
 import { audioPlayerService } from '../utils/audioEngine.js';
 
@@ -56,20 +57,19 @@ export default function YouTubePlayer() {
   // Dynamic live metadata state populated by YouTube API
   const [liveMetadata, setLiveMetadata] = useState({});
 
-  // --- Player State ---
+  // --- Live Synchronized Broadcast & Player State ---
+  const initialBroadcast = useMemo(() => getLiveBroadcastStatus(), []);
+  const [isLiveBroadcast, setIsLiveBroadcast] = useState(true);
   const [activeGenre, setActiveGenre] = useState('all');
-  const [currentTrackId, setCurrentTrackId] = useState(() => {
-    const list = normalizeTracks(DEFAULT_TRACKS);
-    return list[0]?.id || 'void-01';
-  });
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrackId, setCurrentTrackId] = useState(() => initialBroadcast.track.id);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(true); // Default to shuffle/random for dynamic radio experience
+  const [isShuffle, setIsShuffle] = useState(false); // Live radio follows broadcast sequence
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [embedAutoplay, setEmbedAutoplay] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => initialBroadcast.seekSeconds);
+  const [duration, setDuration] = useState(() => initialBroadcast.track.durationSec || 180);
+  const [embedAutoplay, setEmbedAutoplay] = useState(true);
   const [isTheatre, setIsTheatre] = useState(false);
   const [showScanlines, setShowScanlines] = useState(true);
   
@@ -107,11 +107,14 @@ export default function YouTubePlayer() {
     return resolveTargetTrack(currentTrackId, allTracks) || genreTracks[0] || allTracks[0];
   }, [allTracks, currentTrackId, genreTracks]);
 
-  // Computed embed URL for active track
+  // Computed embed URL for active track with synchronized live seek start
   const embedUrl = useMemo(() => {
     if (!currentTrack) return '';
-    return getEmbedUrl(currentTrack, { autoplay: embedAutoplay });
-  }, [currentTrack, embedAutoplay]);
+    return getEmbedUrl(currentTrack, { 
+      autoplay: embedAutoplay,
+      start: isLiveBroadcast ? initialBroadcast.seekSeconds : 0
+    });
+  }, [currentTrack, embedAutoplay, initialBroadcast.seekSeconds, isLiveBroadcast]);
 
   // Toast Helper
   const showPlayerToast = useCallback((msg) => {
@@ -224,6 +227,7 @@ export default function YouTubePlayer() {
       setIsSynthDroneMode(false);
     }
 
+    setIsLiveBroadcast(false); // User chose a specific custom track
     setCurrentTrackId(targetTrack.id);
     setCurrentTime(0);
     setIsDeckVisible(true);
@@ -249,8 +253,50 @@ export default function YouTubePlayer() {
     }
   }, [allTracks, isSynthDroneMode, sendPlayerCommand, volume]);
 
+  // Synchronize to deterministic global live radio broadcast
+  const syncToLiveBroadcast = useCallback((forcePlay = true) => {
+    const live = getLiveBroadcastStatus();
+    setIsLiveBroadcast(true);
+    setCurrentTrackId(live.track.id);
+    setCurrentTime(live.seekSeconds);
+    setDuration(live.track.durationSec);
+    setIsDeckVisible(true);
+    if (forcePlay) {
+      setIsPlaying(true);
+      setEmbedAutoplay(true);
+      if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+        try {
+          playerRef.current.loadVideoById({
+            videoId: live.track.youtubeId,
+            startSeconds: live.seekSeconds
+          });
+          playerRef.current.unMute();
+          playerRef.current.setVolume(Math.round(volume * 100));
+          playerRef.current.playVideo();
+        } catch {
+          sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+          sendPlayerCommand('playVideo');
+        }
+      } else {
+        sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+        sendPlayerCommand('playVideo');
+      }
+    }
+    showPlayerToast(`Tuned to 98.4 FM Live Stream: ${live.track.title}`);
+  }, [sendPlayerCommand, showPlayerToast, volume]);
+
   // Navigation: Next & Previous
   const handlePlayNext = useCallback(() => {
+    if (isLiveBroadcast) {
+      const live = getLiveBroadcastStatus();
+      setCurrentTrackId(live.track.id);
+      setCurrentTime(live.seekSeconds);
+      setDuration(live.track.durationSec);
+      sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+      sendPlayerCommand('playVideo');
+      return;
+    }
+
     if (currentTrack?.type === 'playlist') {
       sendPlayerCommand('nextVideo');
     }
@@ -268,9 +314,19 @@ export default function YouTubePlayer() {
       const nextTrack = genreTracks[nextIndex];
       if (nextTrack) playTrackById(nextTrack.id, true);
     }
-  }, [currentTrack?.type, genreTracks, isShuffle, currentTrackId, playTrackById, sendPlayerCommand]);
+  }, [currentTrack?.type, genreTracks, isLiveBroadcast, isShuffle, currentTrackId, playTrackById, sendPlayerCommand]);
 
   const handlePlayPrev = useCallback(() => {
+    if (isLiveBroadcast) {
+      const live = getLiveBroadcastStatus();
+      setCurrentTrackId(live.track.id);
+      setCurrentTime(live.seekSeconds);
+      setDuration(live.track.durationSec);
+      sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+      sendPlayerCommand('playVideo');
+      return;
+    }
+
     if (currentTime > 4) {
       sendPlayerCommand('seekTo', [0, true]);
       setCurrentTime(0);
@@ -287,7 +343,7 @@ export default function YouTubePlayer() {
     const prevIndex = (currentIndex - 1 + genreTracks.length) % genreTracks.length;
     const prevTrack = genreTracks[prevIndex];
     if (prevTrack) playTrackById(prevTrack.id, true);
-  }, [currentTime, currentTrack?.type, genreTracks, currentTrackId, playTrackById, sendPlayerCommand]);
+  }, [currentTime, currentTrack?.type, genreTracks, isLiveBroadcast, currentTrackId, playTrackById, sendPlayerCommand]);
 
   useEffect(() => {
     handlePlayNextRef.current = handlePlayNext;
@@ -388,7 +444,18 @@ export default function YouTubePlayer() {
           events: {
             onReady: (event) => {
               event.target.setVolume(Math.round(volume * 100));
-              if (isMuted) event.target.mute();
+              if (isMuted) {
+                event.target.mute();
+              } else {
+                event.target.unMute();
+              }
+              if (isLiveBroadcast) {
+                const live = getLiveBroadcastStatus();
+                event.target.seekTo(live.seekSeconds, true);
+                event.target.playVideo();
+              } else if (isPlaying) {
+                event.target.playVideo();
+              }
             },
             onStateChange: (event) => {
               if (!window.YT) return;
@@ -432,7 +499,7 @@ export default function YouTubePlayer() {
         initPlayer();
       };
     }
-  }, [isMuted, showPlayerToast, syncLivePlayerInfo, volume]);
+  }, [isLiveBroadcast, isMuted, isPlaying, showPlayerToast, syncLivePlayerInfo, volume]);
 
   // Track progress updater
   useEffect(() => {
@@ -458,6 +525,89 @@ export default function YouTubePlayer() {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     };
   }, [isPlaying, syncLivePlayerInfo]);
+
+  // Mobile browser autoplay policy unlocker on first user gesture (touch, click, scroll)
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+        try {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(Math.round(volume * 100));
+          playerRef.current.playVideo();
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    const events = ['pointerdown', 'touchstart', 'click', 'keydown'];
+    const handleGesture = () => {
+      unlockAudio();
+      events.forEach(e => window.removeEventListener(e, handleGesture));
+    };
+
+    events.forEach(e => window.addEventListener(e, handleGesture, { passive: true }));
+    return () => {
+      events.forEach(e => window.removeEventListener(e, handleGesture));
+    };
+  }, [volume]);
+
+  // Synchronized Live Broadcast heartbeat & drift correction across all users
+  useEffect(() => {
+    if (!isLiveBroadcast) return;
+
+    const syncInterval = setInterval(() => {
+      const live = getLiveBroadcastStatus();
+      // Track rotation according to deterministic global clock
+      if (live.track.id !== currentTrackId) {
+        setCurrentTrackId(live.track.id);
+        setCurrentTime(live.seekSeconds);
+        setDuration(live.track.durationSec);
+        if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+          playerRef.current.loadVideoById({
+            videoId: live.track.youtubeId,
+            startSeconds: live.seekSeconds
+          });
+          playerRef.current.playVideo();
+        } else {
+          sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+          sendPlayerCommand('playVideo');
+        }
+      } else if (isPlaying && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        try {
+          const actualTime = playerRef.current.getCurrentTime();
+          // Correct drift if > 4 seconds away from global broadcast time
+          if (typeof actualTime === 'number' && Math.abs(actualTime - live.seekSeconds) > 4) {
+            playerRef.current.seekTo(live.seekSeconds, true);
+          }
+        } catch {
+          // buffering
+        }
+      }
+    }, 4000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isLiveBroadcast) {
+        const live = getLiveBroadcastStatus();
+        if (live.track.id !== currentTrackId) {
+          setCurrentTrackId(live.track.id);
+          setCurrentTime(live.seekSeconds);
+          setDuration(live.track.durationSec);
+          sendPlayerCommand('loadVideoById', [live.track.youtubeId, live.seekSeconds]);
+          sendPlayerCommand('playVideo');
+        } else {
+          sendPlayerCommand('seekTo', [live.seekSeconds, true]);
+          sendPlayerCommand('playVideo');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(syncInterval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentTrackId, isLiveBroadcast, isPlaying, sendPlayerCommand]);
 
   // Roll a Random Song in current or chosen genre immediately
   const handleRollRandomGenreTrack = useCallback((genre = activeGenre) => {
@@ -487,6 +637,7 @@ export default function YouTubePlayer() {
   useEffect(() => {
     const handleGlobalPlay = (e) => {
       const { trackId, genre, autoPlay = true } = e.detail || {};
+      setIsLiveBroadcast(false);
       if (trackId) {
         playTrackById(trackId, autoPlay);
       } else if (genre) {
@@ -494,11 +645,17 @@ export default function YouTubePlayer() {
       }
     };
 
+    const handleGlobalLive = () => {
+      syncToLiveBroadcast(true);
+    };
+
     window.addEventListener('odd-play-track', handleGlobalPlay);
+    window.addEventListener('odd-play-live', handleGlobalLive);
     return () => {
       window.removeEventListener('odd-play-track', handleGlobalPlay);
+      window.removeEventListener('odd-play-live', handleGlobalLive);
     };
-  }, [playTrackById, handleRollRandomGenreTrack]);
+  }, [playTrackById, handleRollRandomGenreTrack, syncToLiveBroadcast]);
 
   // Toggle Play / Pause
   const handleTogglePlay = () => {
@@ -516,13 +673,21 @@ export default function YouTubePlayer() {
     if (isPlaying) {
       sendPlayerCommand('pauseVideo');
       setIsPlaying(false);
+      showPlayerToast('Radio Paused');
     } else {
+      if (isLiveBroadcast) {
+        const live = getLiveBroadcastStatus();
+        setCurrentTrackId(live.track.id);
+        setCurrentTime(live.seekSeconds);
+        sendPlayerCommand('seekTo', [live.seekSeconds, true]);
+      }
       setEmbedAutoplay(true);
       setIsDeckVisible(true);
       sendPlayerCommand('playVideo');
       sendPlayerCommand('unMute');
       sendPlayerCommand('setVolume', [Math.round(volume * 100)]);
       setIsPlaying(true);
+      showPlayerToast(isLiveBroadcast ? 'Re-synced with Live Broadcast' : 'Radio Resumed');
     }
   };
 
@@ -561,6 +726,7 @@ export default function YouTubePlayer() {
     const seekSec = parseFloat(e.target.value);
     setCurrentTime(seekSec);
     sendPlayerCommand('seekTo', [seekSec, true]);
+    setIsLiveBroadcast(false);
   };
 
   // Genre Change Handler
@@ -674,7 +840,9 @@ export default function YouTubePlayer() {
           title="Open ODD FREQUENCY Cyber Deck"
         >
           <span className={`yt-deck-led ${isPlaying ? 'is-playing' : ''}`}></span>
-          <span className="font-mono">ODD FREQUENCY // SOUND DECK</span>
+          <span className="font-mono">
+            {isLiveBroadcast ? '● LIVE 98.4 FM' : 'ODD FREQUENCY // SOUND DECK'}
+          </span>
           <span>{isPlaying ? '▶' : '❚❚'}</span>
         </button>
       )}
@@ -692,10 +860,33 @@ export default function YouTubePlayer() {
           <div className="yt-deck-header">
             <div className="yt-deck-header-title">
               <span className={`yt-deck-led ${isPlaying ? 'is-playing' : ''}`}></span>
-              <span>ODD FREQUENCY // {activeGenreMeta.label || 'SOUND DECK'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <span>ODD FREQUENCY // 98.4 FM</span>
+                {isLiveBroadcast ? (
+                  <span className="yt-live-pill font-mono">
+                    ● LIVE SYNC
+                  </span>
+                ) : (
+                  <span className="font-mono" style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
+                    [ ARCHIVE ]
+                  </span>
+                )}
+              </span>
             </div>
 
             <div className="yt-deck-header-actions">
+              {!isLiveBroadcast && (
+                <button 
+                  type="button"
+                  className="yt-deck-action-btn yt-live-sync-btn"
+                  onClick={() => syncToLiveBroadcast(true)}
+                  title="Tune into 24/7 Global Live Stream"
+                  style={{ color: 'var(--accent-lime)', borderColor: 'var(--accent-lime)' }}
+                >
+                  ⚡ TUNE LIVE
+                </button>
+              )}
+
               <button 
                 type="button"
                 className="yt-deck-action-btn"
@@ -739,10 +930,29 @@ export default function YouTubePlayer() {
           {/* Minimized Compact Bar */}
           {isMinimized && (
             <div className="yt-deck-minimized-row" onClick={() => setIsMinimized(false)}>
-              <span className="yt-minimized-title font-mono">
-                {isPlaying ? '▶' : '❚❚'} {(liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
-              </span>
-              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
+                <span className={`yt-deck-led ${isPlaying ? 'is-playing' : ''}`} style={{ flexShrink: 0 }}></span>
+                {isLiveBroadcast && (
+                  <span className="yt-live-pill font-mono" style={{ fontSize: '0.52rem', padding: '0.05rem 0.25rem', flexShrink: 0 }}>
+                    LIVE
+                  </span>
+                )}
+                <span className="yt-minimized-title font-mono">
+                  {isPlaying ? '▶' : '❚❚'} {(liveMetadata[currentTrack?.id]?.title || currentTrack?.title)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexShrink: 0 }}>
+                {!isLiveBroadcast && (
+                  <button 
+                    type="button" 
+                    className="yt-deck-action-btn"
+                    onClick={(e) => { e.stopPropagation(); syncToLiveBroadcast(true); }}
+                    title="Re-sync with Live Broadcast"
+                    style={{ color: 'var(--accent-lime)' }}
+                  >
+                    ⚡ LIVE
+                  </button>
+                )}
                 <button 
                   type="button" 
                   className="yt-deck-action-btn"
@@ -755,7 +965,7 @@ export default function YouTubePlayer() {
                   className="yt-deck-action-btn"
                   onClick={(e) => { e.stopPropagation(); setIsMinimized(false); }}
                 >
-                  EXPAND ▲
+                  ▲
                 </button>
               </div>
             </div>
@@ -937,6 +1147,20 @@ export default function YouTubePlayer() {
                     />
                   </div>
 
+                  {/* Live Sync Action Button if not currently synced */}
+                  {!isLiveBroadcast && (
+                    <button 
+                      type="button"
+                      className="yt-hardware-btn yt-dice-btn"
+                      onClick={() => syncToLiveBroadcast(true)}
+                      title="Tune in to 24/7 Global Live Radio"
+                      aria-label="Tune into live broadcast"
+                      style={{ color: 'var(--accent-lime)', borderColor: 'var(--accent-lime)', fontSize: '0.82rem' }}
+                    >
+                      ⚡
+                    </button>
+                  )}
+
                   {/* Dice Roll for Random Song */}
                   <button 
                     type="button"
@@ -1053,6 +1277,35 @@ export default function YouTubePlayer() {
 
                   {/* List of Tracks in Active Genre */}
                   <div className="yt-tracks-scroll-list">
+                    {/* Synchronized 24/7 Global Radio Master Channel Item */}
+                    <div 
+                      className={`yt-track-card ${isLiveBroadcast ? 'is-playing' : ''}`}
+                      onClick={() => { syncToLiveBroadcast(true); setIsDrawerOpen(false); }}
+                      style={{
+                        border: '1px solid var(--accent-lime)',
+                        background: isLiveBroadcast ? 'rgba(212, 255, 0, 0.12)' : 'rgba(212, 255, 0, 0.04)',
+                        marginBottom: '0.65rem'
+                      }}
+                    >
+                      <div className="yt-card-index" style={{ color: 'var(--accent-lime)' }}>
+                        📡
+                      </div>
+                      <div className="yt-card-info">
+                        <div className="yt-card-title-row">
+                          <span className="yt-card-title" style={{ color: '#ffffff', fontWeight: 700 }}>
+                            ● 98.4 FM LIVE SATELLITE BROADCAST
+                          </span>
+                          <span className="yt-live-pill font-mono" style={{ fontSize: '0.55rem' }}>
+                            {isLiveBroadcast ? 'TUNED' : 'SYNC ALL USERS'}
+                          </span>
+                        </div>
+                        <div className="yt-card-artist-row">
+                          <span className="yt-card-artist" style={{ color: 'var(--accent-lime)' }}>
+                            Continuous synchronized radio stream playing for all users worldwide
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                     {genreTracks.map((track, idx) => {
                       const isCurrent = track.id === currentTrackId && !isSynthDroneMode;
                       return (
