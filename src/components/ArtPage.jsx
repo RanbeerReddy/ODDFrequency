@@ -178,6 +178,9 @@ export default function ArtPage({ onSelectPrintProposal, onOpenArena }) {
                   style={{ marginTop: '0.8rem', width: '100%' }}
                   onClick={() => {
                     handleToggleLike(activeModalArt.id);
+                    if (onSelectPrintProposal) {
+                      onSelectPrintProposal(activeModalArt);
+                    }
                     setActiveModalArt(null);
                   }}
                 >
