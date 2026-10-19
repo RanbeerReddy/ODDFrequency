@@ -327,14 +327,16 @@ export default function App() {
             <section className="container" style={{ paddingBottom: '4rem' }}>
               <div style={{ 
                 display: 'flex', 
+                flexWrap: 'wrap',
                 justifyContent: 'space-between', 
                 alignItems: 'baseline', 
                 marginBottom: '2rem',
                 borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '1rem'
+                paddingBottom: '1rem',
+                gap: '0.5rem'
               }}>
                 <div>
-                  <h3 className="font-headline" style={{ fontSize: '1.8rem', letterSpacing: '-0.02em' }}>
+                  <h3 className="font-headline" style={{ fontSize: 'clamp(1.3rem, 4vw, 1.8rem)', letterSpacing: '-0.02em' }}>
                     FLAGSHIP CONCEPTS
                   </h3>
                   <p className="font-sub" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
