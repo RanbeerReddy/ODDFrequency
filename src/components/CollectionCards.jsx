@@ -121,7 +121,7 @@ export default function CollectionCards({ onSelectApparel, onSelectArt, onSelect
                 <span className="card-count">5 CHANNELS &bull; LIVE</span>
               </div>
               <p className="card-tagline">
-                Underground house beats, electro rave, 90s Seattle grunge cassettes, industrial metal waves, and deep meditative lo-fi drone loops.
+                Curated subterranean frequencies: Slowcore dreampop, Romantic darkwave, Death metal archives, 3AM dark noir jazz, and Mac DeMarco bedroom lo-fi demos.
               </p>
 
               <div className="card-footer-row">

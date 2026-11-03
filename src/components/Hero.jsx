@@ -47,7 +47,7 @@ export default function Hero({ onExploreApparel, onExploreArt, onExploreMusic, o
             style={{ cursor: 'pointer' }}
           >
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8', display: 'inline-block' }}></span>
-            <span>MUSIC &bull; Radio Sound System</span>
+            <span>MUSIC &bull; 5-Frequency Radio Sound System</span>
           </button>
 
           <button 
