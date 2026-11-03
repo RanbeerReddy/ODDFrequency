@@ -1,266 +1,253 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  DEFAULT_TRACKS, 
-  GENRES, 
-  normalizeTracks, 
-  getYouTubeThumbnail, 
-  fetchYouTubeMetadata,
-  playTrack,
-  playGenre,
-  MIXTAPES,
-  catalog 
-} from '../data/musicTracks.js';
-import { audioPlayerService } from '../utils/audioEngine.js';
+import React, { useState, useMemo } from 'react';
+import { useAudio } from '../context/useAudio.js';
+import { STATIONS, GENRES, MIXTAPES, DEFAULT_TRACKS } from '../data/musicTracks.js';
+import VisualizerBars from './player/VisualizerBars.jsx';
 
 export default function MusicPage() {
+  const {
+    currentTrack,
+    isPlaying,
+    currentStation,
+    isLiveSync,
+    playTrack,
+    setStation,
+    tuneLive
+  } = useAudio();
+
   const [activeGenre, setActiveGenre] = useState('all');
-  const [liveMetadata, setLiveMetadata] = useState({});
-  const [isSynthPlaying, setIsSynthPlaying] = useState(false);
-  const [catalogState, setCatalogState] = useState(() => catalog.getState());
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const unsub = catalog.subscribe(setCatalogState);
-    catalog.load();
-    return unsub;
-  }, []);
-
-  // Normalize tracks from live catalog or default fallback
-  const tracks = useMemo(() => {
-    const sourceTracks = catalogState.tracks?.length > 0 ? catalogState.tracks : DEFAULT_TRACKS;
-    return normalizeTracks(sourceTracks);
-  }, [catalogState.tracks]);
-
-  const displayGenres = useMemo(() => {
-    return catalogState.genres?.length > 0 ? catalogState.genres : GENRES;
-  }, [catalogState.genres]);
-
-  const displayMixtapes = useMemo(() => {
-    return catalogState.mixtapes?.length > 0 ? catalogState.mixtapes : MIXTAPES;
-  }, [catalogState.mixtapes]);
-
-  // Filtered tracks
+  // Filter tracks by genre and search query
   const filteredTracks = useMemo(() => {
-    if (activeGenre === 'all') return tracks;
-    return tracks.filter(t => t.genre === activeGenre || (activeGenre === 'custom' && t.type === 'playlist') || t.stationId === activeGenre);
-  }, [tracks, activeGenre]);
+    let list = DEFAULT_TRACKS;
 
-  // Dynamically fetch metadata for autoFetch tracks (e.g. YouTube playlist or URL-only items)
-  useEffect(() => {
-    tracks.forEach(track => {
-      if (track.autoFetch && !liveMetadata[track.id]) {
-        fetchYouTubeMetadata(track.url || track.youtubeId, track.type).then(meta => {
-          if (meta) {
-            setLiveMetadata(prev => ({
-              ...prev,
-              [track.id]: {
-                ...prev[track.id],
-                title: meta.title || prev[track.id]?.title,
-                artist: meta.artist || prev[track.id]?.artist,
-                thumbnail: meta.thumbnail || prev[track.id]?.thumbnail,
-                duration: meta.duration || prev[track.id]?.duration
-              }
-            }));
-          }
-        });
-      }
-    });
-  }, [tracks, liveMetadata]);
-
-  // Handle tuning into a track or playlist
-  const handleTuneIn = (trackId) => {
-    if (isSynthPlaying) {
-      audioPlayerService.stop();
-      setIsSynthPlaying(false);
+    if (activeGenre !== 'all') {
+      list = list.filter(t => t.genre === activeGenre || t.stationId === activeGenre);
     }
-    playTrack(trackId);
-  };
 
-  // Handle procedural synth toggle
-  const handleToggleSynth = () => {
-    if (isSynthPlaying) {
-      audioPlayerService.stop();
-      setIsSynthPlaying(false);
-    } else {
-      audioPlayerService.start('ambient');
-      setIsSynthPlaying(true);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(t => 
+        t.title.toLowerCase().includes(q) || 
+        t.artist.toLowerCase().includes(q) ||
+        (t.note && t.note.toLowerCase().includes(q))
+      );
     }
-  };
+
+    return list;
+  }, [activeGenre, searchQuery]);
 
   return (
-    <section className="container" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
-      {/* Page Header */}
+    <section className="container music-page-container">
+      {/* Header & Breadcrumb */}
       <div className="collection-page-header">
         <div className="collection-page-breadcrumbs">
-          <span>BROADCAST</span>
+          <span>ARCHIVE</span>
           <span>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>SOUND SYSTEM &amp; YOUTUBE DECK</span>
+          <span style={{ color: 'var(--text-primary)' }}>UNDERGROUND SOUND SYSTEM // 5 FREQUENCIES</span>
         </div>
 
-        <h1 className="collection-hero-title">
-          ODD FREQUENCY SOUND SYSTEM
-        </h1>
+        <div className="music-hero-title-wrap">
+          <h1 className="collection-hero-title">
+            THE SOUND VAULT.
+          </h1>
+          <div className="live-broadcast-status-pill font-mono">
+            <span className="live-dot-pulse"></span>
+            <span>BROADCASTING LIVE // {currentStation.frequency} ({currentStation.name})</span>
+          </div>
+        </div>
 
         <p className="collection-hero-desc">
-          <strong>THE SONIC FREQUENCIES BEHIND OUR THREADS &mdash; </strong>
-          Fashion and music are indivisible. From underground 90s nu-metal basements to Berlin four-on-the-floor warehouse house and hyper-pop rave culture. Tune into our live YouTube satellite channels, community playlist archives, or direct procedural browser drone.
+          <strong>ODD FREQUENCY RADIO // 5 CURATED FREQUENCIES &mdash; </strong>
+          Sound is the atmospheric foundation of the garments we forge. Switch across 5 curated channels: from slowcore dreampop and 80s romantic darkwave to Florida death metal, late-night cinematic noir jazz, and slacker lo-fi bedroom tape demos.
         </p>
       </div>
 
-      {/* Genre Filter Bar */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '0.6rem', 
-        flexWrap: 'wrap', 
-        marginBottom: '2.5rem', 
-        borderBottom: '1px solid var(--border-color)',
-        paddingBottom: '1.25rem'
-      }}>
-        {displayGenres.map(genre => (
-          <button
-            key={genre.id}
-            onClick={() => setActiveGenre(genre.id)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.5rem 1rem',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              background: activeGenre === genre.id ? 'var(--accent-purple)' : 'var(--card-bg)',
-              color: activeGenre === genre.id ? '#ffffff' : 'var(--text-secondary)',
-              border: `1px solid ${activeGenre === genre.id ? 'var(--accent-purple)' : 'var(--border-color)'}`,
-              borderRadius: '2px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <span>{genre.icon}</span>
-            <span>{genre.label}</span>
-          </button>
-        ))}
+      {/* 5 Radio Station Deck Cards */}
+      <div className="stations-deck-grid">
+        {STATIONS.map((st) => {
+          const isSelected = currentStation.id === st.id;
+          return (
+            <div 
+              key={st.id}
+              className={`station-deck-card ${isSelected ? 'active' : ''}`}
+              onClick={() => setStation(st.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setStation(st.id)}
+            >
+              <div className="station-card-top">
+                <span className="station-freq-badge font-mono" style={{ borderColor: st.accent, color: st.accent }}>
+                  {st.frequency}
+                </span>
+                <span className="station-live-badge">
+                  {isSelected && isPlaying ? (
+                    <span className="station-transmitting-pill" style={{ color: st.accent }}>
+                      <span className="mini-pulse-dot" style={{ backgroundColor: st.accent, boxShadow: `0 0 6px ${st.accent}` }} /> TRANSMITTING
+                    </span>
+                  ) : (
+                    <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                      [{st.trackCount} TRACKS]
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              <h3 className="station-card-name font-headline">{st.name}</h3>
+              <p className="station-card-tagline">{st.tagline}</p>
+
+              <div className="station-card-footer">
+                <button 
+                  className={`btn-station-tune ${isSelected ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setStation(st.id);
+                  }}
+                  style={isSelected ? { background: st.accent, borderColor: st.accent, color: '#000', fontWeight: '800' } : {}}
+                >
+                  {isSelected ? `✓ TUNED TO ${st.frequency}` : `TUNE FREQUENCY →`}
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Featured Stations & Tracks Grid */}
-      <div style={{ marginBottom: '4rem' }}>
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap',
-          justifyContent: 'space-between', 
-          alignItems: 'baseline', 
-          marginBottom: '1.5rem',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.8rem',
-          gap: '0.5rem'
-        }}>
-          <h2 className="font-headline" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.4rem)' }}>
-            ACTIVE SATELLITE CHANNELS &amp; TRACKS ({filteredTracks.length})
-          </h2>
-          <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--accent-purple)' }}>
-            [ LIVE YOUTUBE INTEGRATION ]
-          </span>
+      {/* Filter and Search Bar */}
+      <div className="music-filter-toolbar">
+        <div className="music-genre-chips">
+          {GENRES.map(g => (
+            <button
+              key={g.id}
+              className={`filter-chip ${activeGenre === g.id ? 'active' : ''}`}
+              onClick={() => setActiveGenre(g.id)}
+            >
+              {g.label}
+            </button>
+          ))}
         </div>
 
-        <div className="music-stations-grid">
+        <div className="music-search-actions">
+          <div className="music-search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input 
+              type="text"
+              placeholder="Search artist or track..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="music-search-input"
+            />
+            {searchQuery && (
+              <button 
+                className="music-search-clear"
+                onClick={() => setSearchQuery('')}
+              >
+                &times;
+              </button>
+            )}
+          </div>
+
+          <button 
+            className={`btn-tune-broadcast ${isLiveSync ? 'active' : ''}`}
+            onClick={tuneLive}
+          >
+            <span>⚡</span>
+            <span>{isLiveSync ? 'SYNCED TO BROADCAST' : 'TUNE LIVE SYNC'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Curated Tracklist Table */}
+      <div className="music-tracklist-section">
+        <div className="tracklist-header-row font-mono">
+          <span className="th-num">#</span>
+          <span className="th-title">TRACK / ARTIST</span>
+          <span className="th-station">FREQUENCY</span>
+          <span className="th-genre">PLAYLIST</span>
+          <span className="th-dur">TIME</span>
+          <span className="th-act">ACTION</span>
+        </div>
+
+        <div className="tracklist-rows">
           {filteredTracks.map((track, idx) => {
-            const meta = liveMetadata[track.id] || {};
-            const displayTitle = meta.title || track.title;
-            const displayArtist = meta.artist || track.artist;
-            const displayThumb = getYouTubeThumbnail(track.youtubeId, track.type, meta.thumbnail || track.thumbnail);
-            const isPlaylist = track.type === 'playlist';
+            const isCurrent = currentTrack.id === track.id || currentTrack.youtubeId === track.youtubeId;
+            const isThisPlaying = isCurrent && isPlaying;
 
             return (
-              <div key={track.id} className="music-station-card">
-                <div>
-                  {/* Track Thumbnail Header */}
-                  <div style={{ 
-                    position: 'relative', 
-                    aspectRatio: '16/9', 
-                    overflow: 'hidden', 
-                    borderRadius: '2px', 
-                    marginBottom: '1rem',
-                    background: '#0a0a0a',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <img 
-                      src={displayThumb} 
-                      alt={displayTitle}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      loading="lazy"
-                    />
-                    <span 
-                      className="font-mono"
-                      style={{
-                        position: 'absolute',
-                        top: '0.5rem',
-                        left: '0.5rem',
-                        fontSize: '0.65rem',
-                        background: 'rgba(0,0,0,0.85)',
-                        color: isPlaylist ? 'var(--accent-lime)' : 'var(--accent-purple)',
-                        border: `1px solid ${isPlaylist ? 'var(--accent-lime)' : 'var(--accent-purple)'}`,
-                        padding: '0.15rem 0.4rem',
-                        fontWeight: 700
-                      }}
-                    >
-                      {isPlaylist ? '⚡ YOUTUBE PLAYLIST' : `CHANNEL [0${idx + 1}]`}
-                    </span>
-                    <span 
-                      className="font-mono"
-                      style={{
-                        position: 'absolute',
-                        bottom: '0.5rem',
-                        right: '0.5rem',
-                        fontSize: '0.65rem',
-                        background: 'rgba(0,0,0,0.85)',
-                        color: '#ffffff',
-                        padding: '0.15rem 0.35rem'
-                      }}
-                    >
-                      {meta.duration || track.duration || (isPlaylist ? 'PLAYLIST' : 'YOUTUBE')}
-                    </span>
-                  </div>
-
-                  <div className="station-card-top">
-                    <div className="station-freq-badge font-mono">
-                      {track.genre.toUpperCase()} // FREQ
-                    </div>
-                    <span className="station-bpm-badge font-mono">
-                      {isPlaylist ? 'PLAYLIST SYNC' : (track.duration ? `${track.duration} EST` : 'DIRECT FEED')}
-                    </span>
-                  </div>
-
-                  <h3 className="station-card-title" style={{ fontSize: '1.15rem', lineHeight: '1.3' }}>
-                    {displayTitle}
-                  </h3>
-                  
-                  <div className="station-card-genre">
-                    {displayArtist}
-                  </div>
-
-                  {track.note && (
-                    <p className="station-card-desc" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-                      {track.note}
-                    </p>
+              <div 
+                key={track.id}
+                className={`track-table-row ${isCurrent ? 'is-current' : ''}`}
+                onClick={() => playTrack(track)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && playTrack(track)}
+              >
+                {/* Index or Live Equalizer */}
+                <div className="track-col-index font-mono">
+                  {isThisPlaying ? (
+                    <VisualizerBars isPlaying={true} barCount={4} accentColor="var(--accent-purple)" />
+                  ) : (
+                    <span>{idx < 9 ? `0${idx + 1}` : idx + 1}</span>
                   )}
                 </div>
 
-                <div className="station-card-footer" style={{ marginTop: '1rem' }}>
-                  <button 
-                    className="btn-station-tune"
-                    onClick={() => handleTuneIn(track.id)}
-                    aria-label={`Tune into ${displayTitle}`}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    <span>{isPlaylist ? 'STREAM PLAYLIST' : 'TUNE IN RADIO'}</span>
-                  </button>
-                  <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                    {track.type.toUpperCase()}
+                {/* Track Thumbnail, Title, Artist */}
+                <div className="track-col-info">
+                  <img 
+                    src={track.cover || `https://img.youtube.com/vi/${track.youtubeId}/mqdefault.jpg`}
+                    alt={track.title}
+                    className="track-col-thumb"
+                    loading="lazy"
+                  />
+                  <div className="track-titles-block">
+                    <span className="track-row-title font-headline">{track.title}</span>
+                    <span className="track-row-artist">{track.artist}</span>
+                    {track.note && <span className="track-row-note font-mono">{track.note}</span>}
+                  </div>
+                </div>
+
+                {/* Frequency */}
+                <div className="track-col-station font-mono">
+                  <span className="badge-id">{track.frequency}</span>
+                </div>
+
+                {/* Playlist origin */}
+                <div className="track-col-genre font-mono">
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                    {track.playlistId}
                   </span>
+                </div>
+
+                {/* Duration */}
+                <div className="track-col-duration font-mono">
+                  {track.duration}
+                </div>
+
+                {/* Action Button */}
+                <div className="track-col-action">
+                  <button 
+                    className={`btn-track-play ${isCurrent ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playTrack(track);
+                    }}
+                    aria-label={`Play ${track.title}`}
+                  >
+                    {isThisPlaying ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                      </svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5,3 19,12 5,21"/>
+                      </svg>
+                    )}
+                    <span>{isThisPlaying ? 'PLAYING' : 'TUNE IN'}</span>
+                  </button>
                 </div>
               </div>
             );
@@ -268,123 +255,62 @@ export default function MusicPage() {
         </div>
       </div>
 
-      {/* Cassette Mixtape Vault */}
-      <div style={{ marginBottom: '4rem' }}>
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap',
-          justifyContent: 'space-between', 
-          alignItems: 'baseline', 
-          marginBottom: '1.5rem',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.8rem',
-          gap: '0.5rem'
-        }}>
-          <h2 className="font-headline" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.4rem)' }}>
-            OFFICIAL CASSETTE VAULT &amp; MIXTAPES
-          </h2>
-          <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            LIMITED ARCHIVE RELEASES
-          </span>
+      {/* Mixtape Cassette Archives */}
+      <div className="mixtapes-archive-section">
+        <div className="mixtapes-header">
+          <h3 className="font-headline mixtapes-title">
+            THE 5 OFFICIAL YOUTUBE RADIO PLAYLISTS
+          </h3>
+          <p className="font-sub" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Direct channels linked to Odd Frequency's curated YouTube archives.
+          </p>
         </div>
 
         <div className="mixtapes-grid">
-          {displayMixtapes.map(tape => (
+          {MIXTAPES.map(tape => (
             <div key={tape.id} className="mixtape-card">
               <div className="mixtape-cover-wrap">
-                <img src={tape.cover} alt={tape.title} loading="lazy" />
-                <span className="mixtape-runtime-badge font-mono">
-                  {tape.runtime}
-                </span>
+                <img src={tape.cover} alt={tape.title} className="mixtape-img" loading="lazy" />
+                <span className="badge-id mixtape-badge">{tape.station}</span>
               </div>
-
-              <div className="mixtape-info">
-                <span className="badge-id" style={{ color: 'var(--accent-purple)', borderColor: 'var(--accent-purple)' }}>
-                  {tape.id} // TAPE
-                </span>
-                <h3 className="mixtape-title" style={{ marginTop: '0.5rem', marginBottom: '0.2rem' }}>
-                  {tape.title}
-                </h3>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
-                  Curated by {tape.curator}
+              <div className="mixtape-body">
+                <h4 className="mixtape-name font-headline">{tape.title}</h4>
+                <div className="mixtape-tags font-mono">
+                  {tape.tags.map(t => (
+                    <span key={t} className="mixtape-tag-chip">#{t}</span>
+                  ))}
                 </div>
-
-                <div className="mixtape-tracklist" style={{ marginBottom: '1rem' }}>
-                  <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '0.4rem' }}>
-                    // TRACKLIST:
-                  </div>
-                  <ul>
-                    {tape.tracks.map((trk, i) => (
-                      <li key={i}>{trk}</li>
-                    ))}
-                  </ul>
+                <div className="mixtape-meta font-mono">
+                  <span>{tape.trackCount} TRACKS</span>
+                  <span>&bull;</span>
+                  <span>{tape.duration}</span>
                 </div>
-
-                <button 
-                  className="btn-station-tune"
-                  onClick={() => {
-                    if (tape.playlistId) {
-                      handleTuneIn(`playlist-${tape.playlistId}`);
-                    } else {
-                      playGenre(tape.id === 'TAPE-02' ? 'void' : 'feed');
-                    }
-                  }}
-                  style={{ width: '100%', justifyContent: 'center', cursor: 'pointer' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                  <span>PLAY CASSETTE TAPE</span>
-                </button>
+                <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    className="btn-station-tune"
+                    onClick={() => {
+                      const st = STATIONS.find(s => s.playlistId === tape.playlistId);
+                      if (st) setStation(st.id);
+                    }}
+                    style={{ flexGrow: 1 }}
+                  >
+                    PLAY ON RADIO
+                  </button>
+                  <a 
+                    href={tape.playlistUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="badge-id"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}
+                    title="Open on YouTube"
+                  >
+                    ↗ YT
+                  </a>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Procedural Web Audio API Tape Drone Synthesis Mode */}
-      <div style={{
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border-color)',
-        padding: '2rem',
-        borderRadius: '2px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1.5rem'
-      }}>
-        <div style={{ maxWidth: '650px', minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '1.2rem' }}>📼</span>
-            <h3 className="font-headline" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)', margin: 0 }}>
-              SUBTERRANEAN ANALOG TAPE DRONE // 432Hz
-            </h3>
-            <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--accent-lime)', border: '1px solid var(--accent-lime)', padding: '0.1rem 0.35rem' }}>
-              ZERO NETWORK / WEB AUDIO API
-            </span>
-          </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-            Real-time synthesized harmonic drone generated directly inside your browser's audio buffer. Deep sinus sub-bass, warm tape saturation flutter, and hypnotic meditation frequencies.
-          </p>
-        </div>
-
-        <button
-          onClick={handleToggleSynth}
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            padding: '0.75rem 1.4rem',
-            background: isSynthPlaying ? 'var(--accent-lime)' : 'transparent',
-            color: isSynthPlaying ? '#000000' : 'var(--text-primary)',
-            border: `1px solid ${isSynthPlaying ? 'var(--accent-lime)' : 'var(--border-color)'}`,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          {isSynthPlaying ? '■ STOP TAPE SYNTHESIS' : '▶ ACTIVATE BROWSER TAPE DRONE'}
-        </button>
       </div>
     </section>
   );
