@@ -1,0 +1,210 @@
+/**
+ * Odd Frequency - Brand Manifesto & Early Signal Newsletter
+ */
+
+/* Manifesto Section */
+.manifesto-section {
+  padding-top: clamp(3rem, 6vw, 5rem);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.manifesto-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+@media (min-width: 900px) {
+  .manifesto-grid {
+    grid-template-columns: 1fr 1.25fr;
+    gap: 4rem;
+  }
+}
+
+.manifesto-aside {
+  display: flex;
+  flex-direction: column;
+}
+
+.manifesto-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent-purple);
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+.manifesto-big-quote {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: clamp(2rem, 5.5vw, 3.6rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.manifesto-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.manifesto-text-block strong {
+  color: var(--text-primary);
+}
+
+.manifesto-pillars {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 600px) {
+  .manifesto-pillars {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pillar-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  border-radius: var(--radius-sm);
+}
+
+.pillar-title {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.45rem;
+  letter-spacing: 0.04em;
+}
+
+.pillar-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Early Signal Newsletter Section                                           */
+/* -------------------------------------------------------------------------- */
+
+.first-frequency-section {
+  padding-top: clamp(3rem, 6vw, 5rem);
+  padding-bottom: clamp(3.5rem, 7vw, 6rem);
+  border-top: 1px solid var(--border-color);
+}
+
+.first-freq-box {
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: var(--radius-lg);
+  padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.first-freq-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-lime);
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+.first-freq-title {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+  line-height: 1.1;
+}
+
+.first-freq-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 640px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.first-freq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (min-width: 480px) {
+  .first-freq-form {
+    flex-direction: row;
+  }
+}
+
+.first-freq-input {
+  flex-grow: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.85rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.first-freq-input:focus {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 15px var(--accent-purple-glow);
+}
+
+.btn-first-freq-submit {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.85rem 1.5rem;
+  background: var(--accent-purple);
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 15px var(--accent-purple-glow);
+}
+
+.btn-first-freq-submit:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
