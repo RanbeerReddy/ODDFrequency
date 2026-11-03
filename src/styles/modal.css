@@ -1,0 +1,278 @@
+/**
+ * Odd Frequency - Product Detail Modal & Mobile Bottom Sheet
+ */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-end; /* Mobile bottom sheet */
+  justify-content: center;
+  padding: 0;
+  overflow-y: auto;
+  animation: modal-fade-in 0.25s ease;
+}
+
+@media (min-width: 768px) {
+  .modal-backdrop {
+    align-items: center;
+    padding: 2rem;
+  }
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    border-radius: var(--radius-md);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-height: 85vh;
+  }
+}
+
+@keyframes modal-slide-up {
+  from { transform: translateY(40px); }
+  to { transform: translateY(0); }
+}
+
+/* Close Button */
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-primary);
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+  transform: rotate(90deg);
+}
+
+/* Left Gallery Column */
+.modal-gallery {
+  background: #000;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.modal-gallery img {
+  width: 100%;
+  height: 100%;
+  max-height: 520px;
+  object-fit: cover;
+}
+
+/* Right Details Column */
+.modal-details {
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.modal-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.modal-product-title {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.modal-fit-tag {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+}
+
+.modal-price-box {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+}
+
+.modal-price {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.modal-price-note {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.modal-concept-desc {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 1.75rem;
+}
+
+/* Fabric Specs Checklist */
+.modal-specs-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.modal-specs-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.modal-specs-list li {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.modal-specs-list li::before {
+  content: '✓';
+  color: var(--accent-lime);
+  font-weight: 700;
+}
+
+/* Action Boxes: Vote & Notify */
+.modal-actions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-modal-vote {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.9rem 1.25rem;
+  background: var(--accent-purple);
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 20px var(--accent-purple-glow);
+  transition: all 0.2s ease;
+}
+
+.btn-modal-vote:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.btn-modal-vote.voted {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--accent-purple);
+  color: var(--accent-purple);
+  box-shadow: none;
+}
+
+/* Notify / Waitlist Box */
+.modal-notify-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modal-notify-input {
+  flex-grow: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.modal-notify-input:focus {
+  border-color: var(--accent-purple);
+}
+
+.btn-modal-notify {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.btn-modal-notify:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
