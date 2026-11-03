@@ -1,0 +1,464 @@
+/**
+ * Odd Frequency - Music Sound Vault Page & Broadcaster Styling
+ */
+
+.music-page-container {
+  padding-top: 2.5rem;
+  padding-bottom: 5rem;
+}
+
+.music-hero-title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.live-broadcast-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--accent-purple);
+  padding: 0.35rem 0.75rem;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+/* 5 Stations Deck Grid */
+.stations-deck-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 600px) {
+  .stations-deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 990px) {
+  .stations-deck-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .stations-deck-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.station-deck-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.station-deck-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-light);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.station-deck-card.active {
+  border-color: var(--accent-purple);
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.1) 0%, var(--bg-secondary) 100%);
+  box-shadow: 0 0 25px var(--accent-purple-glow);
+}
+
+.station-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.station-freq-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.station-transmitting-pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-purple);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.station-card-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.station-card-tagline {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.btn-station-tune {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.station-deck-card:hover .btn-station-tune {
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+.btn-station-tune.active {
+  background: var(--accent-purple);
+  color: #ffffff;
+  border-color: var(--accent-purple);
+}
+
+/* Filter and Search Bar */
+.music-filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 900px) {
+  .music-filter-toolbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.music-genre-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.music-search-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.music-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  flex-grow: 1;
+}
+
+.music-search-input {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  outline: none;
+  width: 160px;
+}
+
+.music-search-clear {
+  color: var(--text-tertiary);
+  font-size: 1.1rem;
+}
+
+.btn-tune-broadcast {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.btn-tune-broadcast.active {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+  color: #fff;
+  box-shadow: 0 0 15px var(--accent-purple-glow);
+}
+
+/* Tracklist Table */
+.music-tracklist-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 4rem;
+}
+
+.tracklist-header-row {
+  display: none;
+  padding: 0.85rem 1.25rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+}
+
+@media (min-width: 768px) {
+  .tracklist-header-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 140px 140px 80px 120px;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.tracklist-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive Table Row: Card-like on mobile, clean row on desktop */
+.track-table-row {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 0.75rem;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .track-table-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 140px 140px 80px 120px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+  }
+}
+
+.track-table-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.track-table-row.is-current {
+  background: rgba(168, 85, 247, 0.08);
+  border-left: 3px solid var(--accent-purple);
+}
+
+.track-col-index {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .track-col-index {
+    display: block;
+  }
+}
+
+.track-col-info {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.track-col-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.track-titles-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.track-row-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-row-artist {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.track-row-note {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+.track-col-station, .track-col-genre, .track-col-duration {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.btn-track-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-track-play:hover, .btn-track-play.active {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+  color: #fff;
+}
+
+/* Mixtape Cassette Archives */
+.mixtapes-archive-section {
+  margin-top: 3rem;
+}
+
+.mixtapes-header {
+  margin-bottom: 1.5rem;
+}
+
+.mixtapes-title {
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.mixtapes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 600px) {
+  .mixtapes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 990px) {
+  .mixtapes-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .mixtapes-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.mixtape-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mixtape-cover-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  position: relative;
+  background: #000;
+}
+
+.mixtape-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mixtape-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+}
+
+.mixtape-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mixtape-name {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.mixtape-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mixtape-tag-chip {
+  font-size: 0.65rem;
+  color: var(--accent-purple);
+}
+
+.mixtape-meta {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
