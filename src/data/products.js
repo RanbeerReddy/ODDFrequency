@@ -120,70 +120,70 @@ export const PRODUCTS = [
     image: "images/bite-me-ringer.jpg",
     accentColor: "#b026ff",
     tags: ["90s Ringer", "Crimson Ribbing", "Distressed Stencil"],
-    conceptSummary: "Unbleached natural cream cotton fitted with rich crimson red neck and sleeve ribbing. Centered with faded, cracked stencil typography declaring 'BITE ME' for effortless snark.",
+    conceptSummary: "Unbleached natural cream cotton fitted with rich crimson red neck and sleeve ribbing. Features distressed vintage grunge stencil typography across the chest.",
     fabricSpecs: [
-      "220 GSM 100% natural unbleached raw combed cotton",
-      "Durable 1x1 contrast crimson ribbing on collar and cuffs",
-      "Specialty distressed ink formula that ages gracefully with each wash",
-      "Slightly tailored heritage fit sitting right at hip level",
-      "Zero scratchy tags; interior heat-pressed branding"
+      "220 GSM 100% combed unbleached cotton jersey",
+      "1x1 contrast ribbed collar and cuff bands",
+      "Weathered vintage stencil screenprint with micro-cracking",
+      "Classic fitted unisex 90s skater cut",
+      "Ultra-soft breathable handfeel"
     ],
     seedVotes: 0,
     isFeatured: true
   },
   {
-    id: "OF-ZEPPELIN",
-    name: "ZEPPELIN '76 EUROPEAN TOUR ARCHIVE TEE",
-    collection: "THE VOID",
-    collectionSlug: "void",
-    category: "Vintage Band Tees",
-    styleGroup: "band",
-    fit: "Relaxed Classic Tour Cut",
-    indicativePrice: 1699,
-    currency: "₹",
-    priceLabel: "₹1,699 (Concept Prototype)",
-    image: "images/zeppelin-tee.jpg",
-    accentColor: "#b026ff",
-    tags: ["70s Rock Archive", "4-Panel Sepia Grid", "Heavy Fade"],
-    conceptSummary: "Classic rock royalty. Features a 4-panel sepia halftone photographic grid of the four icons in live concert, crowned with psychedelic golden yellow tour lettering and European tour dates.",
-    fabricSpecs: [
-      "260 GSM single jersey cotton with vintage fade wash",
-      "Sepia discharge print for completely breathable graphic area",
-      "Pre-shrunk fabric to prevent post-wash warping",
-      "Comfortable wide rib collar with double-stitch reinforcement",
-      "Vintage lived-in handfeel"
-    ],
-    seedVotes: 0,
-    isFeatured: false
-  },
-  {
     id: "OF-BERSERK",
-    name: "BERSERK ECLIPSE GUTS DARK FANTASY TEE",
+    name: "GUTS 'ECLIPSE RAGE' DARK MANGA TEE",
     collection: "THE VOID",
     collectionSlug: "void",
     category: "Heavyweight Tees",
-    styleGroup: "grunge",
+    styleGroup: "band",
     fit: "Ultra-Boxy Heavyweight (300 GSM)",
     indicativePrice: 1899,
     currency: "₹",
     priceLabel: "₹1,899 (Concept Prototype)",
     image: "images/berserk-tee.jpg",
     accentColor: "#94172b",
-    tags: ["Dark Fantasy Manga", "300 GSM Loopback", "Crimson Blood Moon"],
-    conceptSummary: "A relentless tribute to dark fantasy manga lore. Guts standing defiant before the crimson blood moon, printed on ultra-heavy 300 GSM charcoal stonewashed cotton with micro-frayed edges.",
+    tags: ["Dark Fantasy", "300 GSM Ultra-Heavy", "High-Contrast Halftone"],
+    conceptSummary: "High-contrast Japanese dark fantasy manga art. Highlighting the solitary warrior silhouette framed against a bleeding crimson moon. Originally drafted for hand-pulled silkscreen runs.",
     fabricSpecs: [
-      "300 GSM heavy-grade French Terry cotton",
-      "Distressed mineral wash creating an ash-grey battlefield patina",
-      "Deep crimson and chalk white discharge screenprinting",
-      "Exaggerated drop shoulder tailoring with wide sleeves",
-      "Heavy gauge collar ribbing that will never bacon or sag"
+      "300 GSM heavyweight organic cotton",
+      "Oversized drop-shoulder silhouette with heavy drape",
+      "Precision halftone screenprint rendering intricate ink hatching",
+      "Pigment oil garment dyed for faded vintage patina",
+      "Thick 1.2-inch collar ribbing"
+    ],
+    seedVotes: 0,
+    isFeatured: true
+  },
+  {
+    id: "OF-ZEPPELIN",
+    name: "LED ZEPPELIN 1977 ICARUS TOUR TEE",
+    collection: "THE VOID",
+    collectionSlug: "void",
+    category: "Vintage Band Tees",
+    styleGroup: "band",
+    fit: "Boxy Heavyweight Drop-Shoulder",
+    indicativePrice: 1799,
+    currency: "₹",
+    priceLabel: "₹1,799 (Concept Prototype)",
+    image: "images/zeppelin-tee.jpg",
+    accentColor: "#38bdf8",
+    tags: ["Tour 1977", "Icarus Fallen Angel", "Vintage Acid Wash"],
+    conceptSummary: "1977 North American tour tribute. Faded sky-blue and amber Icarus fallen angel iconography with cracked Swan Song lettering on deeply faded charcoal wash.",
+    fabricSpecs: [
+      "280 GSM heavy loopback combed cotton",
+      "Vintage acid stone-wash for authentic broken-in texture",
+      "Full-chest distressed discharge print with breathable finish",
+      "Double-stitched hems with subtle hem distress",
+      "Drop-shoulder vintage concert cut"
     ],
     seedVotes: 0,
     isFeatured: true
   },
   {
     id: "OF-DRINKING",
-    name: "DRINKING ABOUT YOU CRIMSON BABY TEE",
+    name: "DRINKING ABOUT YOU BABY TEE",
     collection: "THE FEED",
     collectionSlug: "feed",
     category: "Ringer & Baby Tees",
@@ -193,9 +193,9 @@ export const PRODUCTS = [
     currency: "₹",
     priceLabel: "₹1,099 (Concept Prototype)",
     image: "images/drinking-about-you-tee.jpg",
-    accentColor: "#b026ff",
-    tags: ["Indie Sleaze", "Crimson Red", "Bold Typography"],
-    conceptSummary: "Post-punk indie-sleaze uniform. Bold collegiate black lettering across saturated crimson red cotton, cropped right above the waistband for midnight diner and basement club energy.",
+    accentColor: "#94172b",
+    tags: ["Baby Tee", "Ribbed Stretch Cotton", "Midnight Crimson"],
+    conceptSummary: "90s riot grrrl minimalism. Rich crimson red stretch baby tee featuring distressed sans-serif block lettering, cropped right above the waistband for midnight diner and basement club energy.",
     fabricSpecs: [
       "195 GSM combed cotton jersey with 4% elastane stretch",
       "Solid pigment dyed crimson red colorway",
@@ -328,3 +328,12 @@ export const FITS = [
   "Oversized Heavy Skater Fit",
   "Relaxed 70s Heritage Cut"
 ];
+
+export function getProductById(id) {
+  return PRODUCTS.find(p => p.id === id) || null;
+}
+
+export function getFeaturedProducts() {
+  return PRODUCTS.filter(p => p.isFeatured);
+}
+
