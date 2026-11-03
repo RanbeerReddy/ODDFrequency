@@ -1,0 +1,52 @@
+/**
+ * Odd Frequency - Micro-interaction Toast Alerts
+ */
+
+.toast-container {
+  position: fixed;
+  bottom: 84px; /* Sits above mobile mini player or desktop floating player */
+  right: 20px;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: calc(100vw - 40px);
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .toast-container {
+    bottom: 24px;
+    right: 24px;
+    max-width: 380px;
+  }
+}
+
+.toast-item {
+  background: rgba(18, 17, 24, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--accent-purple);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 15px var(--accent-purple-glow);
+  animation: toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
