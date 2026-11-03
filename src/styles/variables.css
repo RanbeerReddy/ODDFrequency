@@ -1,0 +1,72 @@
+/**
+ * Odd Frequency - Design System Variables & Design Tokens
+ */
+
+:root {
+  /* Brand Color Palette */
+  --bg-primary: #09090b;
+  --bg-secondary: #121217;
+  --bg-tertiary: #181820;
+  --bg-card: #111016;
+  --bg-card-hover: #16151f;
+
+  /* Text Hierarchy */
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-muted: #52525b;
+
+  /* Accent Signals */
+  --accent-purple: #a855f7;
+  --accent-purple-glow: rgba(168, 85, 247, 0.25);
+  --accent-lime: #d4ff00;
+  --accent-lime-glow: rgba(212, 255, 0, 0.25);
+  --accent-cyan: #38bdf8;
+  --accent-crimson: #ef4444;
+  --accent-red: #94172b;
+
+  /* Borders & Dividers */
+  --border-color: #27272a;
+  --border-light: #3f3f46;
+  --border-accent: rgba(168, 85, 247, 0.35);
+
+  /* Typography */
+  --font-headline: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  /* Container & Layout */
+  --container-max: 1280px;
+  --container-pad: clamp(1rem, 4vw, 2.5rem);
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Shadows & Glows */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-glow-purple: 0 0 25px rgba(168, 85, 247, 0.25);
+  --shadow-glow-lime: 0 0 25px rgba(212, 255, 0, 0.25);
+
+  /* Z-Index Hierarchy */
+  --z-bg: -1;
+  --z-base: 1;
+  --z-nav: 100;
+  --z-mini-player: 200;
+  --z-cyberdeck: 300;
+  --z-modal: 500;
+  --z-mobile-sheet: 600;
+  --z-toast: 800;
+  --z-crt: 900;
+}
+
+/* Theme variations for Void (dark alt metal) and Feed (acid neon) */
+[data-theme='void'] {
+  --border-accent: rgba(148, 23, 43, 0.45);
+  --accent-purple: #c084fc;
+}
+
+[data-theme='feed'] {
+  --border-accent: rgba(212, 255, 0, 0.45);
+  --accent-purple: #d4ff00;
+}
+
