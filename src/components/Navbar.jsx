@@ -4,7 +4,9 @@ export default function Navbar({
   activeView,
   setActiveView,
   totalVotesCount = 0,
-  onOpenArena
+  cartCount = 0,
+  onOpenArena,
+  onOpenCart
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -19,13 +21,18 @@ export default function Navbar({
     setMobileOpen(false);
   };
 
+  const openCart = () => {
+    if (onOpenCart) onOpenCart();
+    setMobileOpen(false);
+  };
+
   return (
     <>
-      {/* Top Demand Validation Disclaimer Strip */}
+      {/* Top Demand Validation & Launch Promotion Strip */}
       <div className="disclaimer-strip" role="banner" aria-label="Prototype Notice">
         <span className="dot" aria-hidden="true"></span>
         <span>
-          <strong>CONCEPT PROTOTYPE:</strong> We carry zero inventory. Vote for your favourite designs to help us decide what to manufacture in India. No real payments.
+          <strong>BATCH #01 PROTOTYPE:</strong> All apparel pieces now calibrated at <strong>₹399</strong>. Fast dispatch across India. Zero deadstock.
         </span>
       </div>
 
@@ -52,14 +59,15 @@ export default function Navbar({
                   <span></span>
                 </div>
               </div>
-              <span className="brand-tag">00 // INDEPENDENT LABEL</span>
+              <span className="brand-tag">00 // INDEPENDENT LABEL &bull; ₹399</span>
             </div>
 
-            {/* Desktop Navigation Links — hidden on mobile via CSS */}
+            {/* Desktop Navigation Links */}
             <nav aria-label="Main Navigation" className="nav-desktop">
               <ul className="nav-links">
                 <li>
                   <button
+                    type="button"
                     className={`nav-link ${activeView === 'home' ? 'active' : ''}`}
                     onClick={() => navigate('home')}
                   >
@@ -68,7 +76,8 @@ export default function Navbar({
                 </li>
                 <li>
                   <button
-                    className={`nav-link ${activeView === 'apparel' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
+                    type="button"
+                    className={`nav-link ${activeView === 'apparel' || activeView === 'product' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
                     onClick={() => navigate('apparel')}
                   >
                     Apparel
@@ -76,6 +85,7 @@ export default function Navbar({
                 </li>
                 <li>
                   <button
+                    type="button"
                     className={`nav-link ${activeView === 'art' ? 'active' : ''}`}
                     onClick={() => navigate('art')}
                   >
@@ -84,6 +94,7 @@ export default function Navbar({
                 </li>
                 <li>
                   <button
+                    type="button"
                     className={`nav-link ${activeView === 'music' ? 'active' : ''}`}
                     onClick={() => navigate('music')}
                   >
@@ -92,6 +103,7 @@ export default function Navbar({
                 </li>
                 <li>
                   <button
+                    type="button"
                     className={`nav-link ${activeView === 'manifesto' ? 'active' : ''}`}
                     onClick={() => navigate('manifesto')}
                   >
@@ -101,9 +113,28 @@ export default function Navbar({
               </ul>
             </nav>
 
-            {/* Desktop Action Bar — hidden on mobile via CSS */}
+            {/* Desktop Action Bar: Cart & Next Drop Vote Shortcut */}
             <div className="nav-actions nav-desktop">
+              {/* Shopping Cart Button */}
               <button
+                type="button"
+                className="btn-nav-cart"
+                onClick={openCart}
+                aria-label={`Shopping cart with ${cartCount} items`}
+                title="View Shopping Cart"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>CART</span>
+                <span className="cart-badge font-mono">{cartCount}</span>
+              </button>
+
+              {/* Next Drop Arena Button */}
+              <button
+                type="button"
                 className="btn-vote-shortcut"
                 onClick={openArena}
                 aria-label={`View Next Drop Voting Arena, ${totalVotesCount} session votes cast`}
@@ -128,18 +159,35 @@ export default function Navbar({
               </button>
             </div>
 
-            {/* Hamburger toggle — visible only on mobile via CSS */}
-            <button
-              className={`nav-hamburger ${mobileOpen ? 'is-open' : ''}`}
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-nav-drawer"
-              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            >
-              <span className="hamburger-bar"></span>
-              <span className="hamburger-bar"></span>
-              <span className="hamburger-bar"></span>
-            </button>
+            {/* Mobile Header Right Items: Mobile Cart + Hamburger */}
+            <div className="mobile-nav-right">
+              <button
+                type="button"
+                className="btn-nav-cart mobile-cart-btn"
+                onClick={openCart}
+                aria-label={`Shopping cart with ${cartCount} items`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span className="cart-badge font-mono">{cartCount}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`nav-hamburger ${mobileOpen ? 'is-open' : ''}`}
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-nav-drawer"
+                aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              >
+                <span className="hamburger-bar"></span>
+                <span className="hamburger-bar"></span>
+                <span className="hamburger-bar"></span>
+              </button>
+            </div>
 
           </div>
         </div>
@@ -154,6 +202,7 @@ export default function Navbar({
             <ul className="mobile-nav-links">
               <li>
                 <button
+                  type="button"
                   className={`mobile-nav-link ${activeView === 'home' ? 'active' : ''}`}
                   onClick={() => navigate('home')}
                 >
@@ -162,14 +211,16 @@ export default function Navbar({
               </li>
               <li>
                 <button
-                  className={`mobile-nav-link ${activeView === 'apparel' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
+                  type="button"
+                  className={`mobile-nav-link ${activeView === 'apparel' || activeView === 'product' || activeView === 'void' || activeView === 'feed' ? 'active' : ''}`}
                   onClick={() => navigate('apparel')}
                 >
-                  Apparel
+                  Apparel (All Pieces ₹399)
                 </button>
               </li>
               <li>
                 <button
+                  type="button"
                   className={`mobile-nav-link ${activeView === 'art' ? 'active' : ''}`}
                   onClick={() => navigate('art')}
                 >
@@ -178,6 +229,7 @@ export default function Navbar({
               </li>
               <li>
                 <button
+                  type="button"
                   className={`mobile-nav-link ${activeView === 'music' ? 'active' : ''}`}
                   onClick={() => navigate('music')}
                 >
@@ -186,6 +238,7 @@ export default function Navbar({
               </li>
               <li>
                 <button
+                  type="button"
                   className={`mobile-nav-link ${activeView === 'manifesto' ? 'active' : ''}`}
                   onClick={() => navigate('manifesto')}
                 >
@@ -195,6 +248,17 @@ export default function Navbar({
               <li className="mobile-nav-divider" aria-hidden="true"></li>
               <li>
                 <button
+                  type="button"
+                  className="mobile-nav-link"
+                  onClick={openCart}
+                  style={{ color: 'var(--accent-lime)' }}
+                >
+                  🛒 VIEW CART ({cartCount})
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   className="mobile-nav-link mobile-nav-vote"
                   onClick={openArena}
                   aria-label={`View Next Drop Voting Arena, ${totalVotesCount} session votes cast`}
@@ -202,7 +266,7 @@ export default function Navbar({
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                   </svg>
-                  NEXT DROP
+                  NEXT DROP ARENA
                   {totalVotesCount > 0 && (
                     <span className="mobile-vote-badge">{totalVotesCount}</span>
                   )}
