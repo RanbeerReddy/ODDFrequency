@@ -3,6 +3,8 @@
  * 
  * Curated vintage band merch, grunge graphics, cult aesthetic tees,
  * and high-contrast pop culture apparel.
+ * 
+ * All pieces calibrated at ₹399 direct-to-community rate.
  */
 
 export const PRODUCTS = [
@@ -14,10 +16,18 @@ export const PRODUCTS = [
     category: "Pop & Meme Tees",
     styleGroup: "meme",
     fit: "Boxy Relaxed Drop-Shoulder",
-    indicativePrice: 1299,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1299,
     currency: "₹",
-    priceLabel: "₹1,299 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/brat-tee.jpg",
+    images: [
+      "images/brat-tee.jpg",
+      "images/feed-hero.jpg",
+      "images/drop-feed-tee.jpg",
+      "images/feed-power-tee.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["Brat Summer", "240 GSM Combed", "Acid Chartreuse"],
     conceptSummary: "The definitive hyper-ironic cultural staple of the decade. High-voltage chartreuse lime cotton centered with the iconic lower-case 'brat' sans-serif typography. Perfectly boxy, unapologetically loud.",
@@ -39,10 +49,18 @@ export const PRODUCTS = [
     category: "Vintage Band Tees",
     styleGroup: "band",
     fit: "Boxy Heavyweight Drop-Shoulder",
-    indicativePrice: 1699,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1699,
     currency: "₹",
-    priceLabel: "₹1,699 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/slipknot-tee.jpg",
+    images: [
+      "images/slipknot-tee.jpg",
+      "images/void-hero.jpg",
+      "images/void-acid-tee.jpg",
+      "images/void-hoodie.jpg"
+    ],
     accentColor: "#94172b",
     tags: ["Nu-Metal Archive", "280 GSM Heavyweight", "Mineral Acid Wash"],
     conceptSummary: "Late 90s nu-metal aggression captured on heavy distressed cotton. Features the blood-red distressed Slipknot logo and visceral mask graphic on vintage charcoal stone-wash.",
@@ -64,10 +82,18 @@ export const PRODUCTS = [
     category: "Vintage Band Tees",
     styleGroup: "band",
     fit: "Heavyweight Boxy Vintage Cut",
-    indicativePrice: 1799,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1799,
     currency: "₹",
-    priceLabel: "₹1,799 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/black-sabbath-tee.jpg",
+    images: [
+      "images/black-sabbath-tee.jpg",
+      "images/void-hero.jpg",
+      "images/zeppelin-tee.jpg",
+      "images/void-longsleeve.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["Tour 1980", "Heavy Charcoal Fade", "Gothic Angel Shield"],
     conceptSummary: "An authentic tribute to the 1980 Heaven & Hell tour. Faded winged knight angel shield graphic framed by gargoyles, rendered in aged bone and amber inks over deeply faded charcoal black.",
@@ -89,10 +115,18 @@ export const PRODUCTS = [
     category: "Grunge Band Tees",
     styleGroup: "band",
     fit: "Relaxed 90s Grunge Silhouette",
-    indicativePrice: 1749,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1749,
     currency: "₹",
-    priceLabel: "₹1,749 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/nirvana-tee.jpg",
+    images: [
+      "images/nirvana-tee.jpg",
+      "images/void-acid-tee.jpg",
+      "images/void-hero.jpg",
+      "images/slipknot-tee.jpg"
+    ],
     accentColor: "#38bdf8",
     tags: ["90s Grunge", "Electric Cyan Graphic", "Frayed Collar"],
     conceptSummary: "Iconic 1993 Seattle grunge aesthetic. Translucent anatomical figure glowing in electric cyan and neon red fire against an enzyme-faded black canvas with vintage distressing along the ribbing.",
@@ -114,88 +148,120 @@ export const PRODUCTS = [
     category: "Ringer & Baby Tees",
     styleGroup: "ringer",
     fit: "90s Heritage Contrast Ringer",
-    indicativePrice: 1199,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1199,
     currency: "₹",
-    priceLabel: "₹1,199 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/bite-me-ringer.jpg",
+    images: [
+      "images/bite-me-ringer.jpg",
+      "images/feed-baby-tee.jpg",
+      "images/drop-feed-tee.jpg",
+      "images/feed-buffering-tee.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["90s Ringer", "Crimson Ribbing", "Distressed Stencil"],
-    conceptSummary: "Unbleached natural cream cotton fitted with rich crimson red neck and sleeve ribbing. Features distressed vintage grunge stencil typography across the chest.",
+    conceptSummary: "Unbleached natural cream cotton fitted with rich crimson red neck and sleeve ribbing. Centered with faded, cracked stencil typography declaring 'BITE ME' for effortless snark.",
     fabricSpecs: [
-      "220 GSM 100% combed unbleached cotton jersey",
-      "1x1 contrast ribbed collar and cuff bands",
-      "Weathered vintage stencil screenprint with micro-cracking",
-      "Classic fitted unisex 90s skater cut",
-      "Ultra-soft breathable handfeel"
-    ],
-    seedVotes: 0,
-    isFeatured: true
-  },
-  {
-    id: "OF-BERSERK",
-    name: "GUTS 'ECLIPSE RAGE' DARK MANGA TEE",
-    collection: "THE VOID",
-    collectionSlug: "void",
-    category: "Heavyweight Tees",
-    styleGroup: "band",
-    fit: "Ultra-Boxy Heavyweight (300 GSM)",
-    indicativePrice: 1899,
-    currency: "₹",
-    priceLabel: "₹1,899 (Concept Prototype)",
-    image: "images/berserk-tee.jpg",
-    accentColor: "#94172b",
-    tags: ["Dark Fantasy", "300 GSM Ultra-Heavy", "High-Contrast Halftone"],
-    conceptSummary: "High-contrast Japanese dark fantasy manga art. Highlighting the solitary warrior silhouette framed against a bleeding crimson moon. Originally drafted for hand-pulled silkscreen runs.",
-    fabricSpecs: [
-      "300 GSM heavyweight organic cotton",
-      "Oversized drop-shoulder silhouette with heavy drape",
-      "Precision halftone screenprint rendering intricate ink hatching",
-      "Pigment oil garment dyed for faded vintage patina",
-      "Thick 1.2-inch collar ribbing"
+      "220 GSM 100% natural unbleached raw combed cotton",
+      "Durable 1x1 contrast crimson ribbing on collar and cuffs",
+      "Specialty distressed ink formula that ages gracefully with each wash",
+      "Slightly tailored heritage fit sitting right at hip level",
+      "Zero scratchy tags; interior heat-pressed branding"
     ],
     seedVotes: 0,
     isFeatured: true
   },
   {
     id: "OF-ZEPPELIN",
-    name: "LED ZEPPELIN 1977 ICARUS TOUR TEE",
+    name: "ZEPPELIN '76 EUROPEAN TOUR ARCHIVE TEE",
     collection: "THE VOID",
     collectionSlug: "void",
     category: "Vintage Band Tees",
     styleGroup: "band",
-    fit: "Boxy Heavyweight Drop-Shoulder",
-    indicativePrice: 1799,
+    fit: "Relaxed Classic Tour Cut",
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1699,
     currency: "₹",
-    priceLabel: "₹1,799 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/zeppelin-tee.jpg",
-    accentColor: "#38bdf8",
-    tags: ["Tour 1977", "Icarus Fallen Angel", "Vintage Acid Wash"],
-    conceptSummary: "1977 North American tour tribute. Faded sky-blue and amber Icarus fallen angel iconography with cracked Swan Song lettering on deeply faded charcoal wash.",
+    images: [
+      "images/zeppelin-tee.jpg",
+      "images/black-sabbath-tee.jpg",
+      "images/void-hero.jpg",
+      "images/void-longsleeve.jpg"
+    ],
+    accentColor: "#b026ff",
+    tags: ["70s Rock Archive", "4-Panel Sepia Grid", "Heavy Fade"],
+    conceptSummary: "Classic rock royalty. Features a 4-panel sepia halftone photographic grid of the four icons in live concert, crowned with psychedelic golden yellow tour lettering and European tour dates.",
     fabricSpecs: [
-      "280 GSM heavy loopback combed cotton",
-      "Vintage acid stone-wash for authentic broken-in texture",
-      "Full-chest distressed discharge print with breathable finish",
-      "Double-stitched hems with subtle hem distress",
-      "Drop-shoulder vintage concert cut"
+      "260 GSM single jersey cotton with vintage fade wash",
+      "Sepia discharge print for completely breathable graphic area",
+      "Pre-shrunk fabric to prevent post-wash warping",
+      "Comfortable wide rib collar with double-stitch reinforcement",
+      "Vintage lived-in handfeel"
+    ],
+    seedVotes: 0,
+    isFeatured: false
+  },
+  {
+    id: "OF-BERSERK",
+    name: "BERSERK ECLIPSE GUTS DARK FANTASY TEE",
+    collection: "THE VOID",
+    collectionSlug: "void",
+    category: "Heavyweight Tees",
+    styleGroup: "grunge",
+    fit: "Ultra-Boxy Heavyweight (300 GSM)",
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1899,
+    currency: "₹",
+    priceLabel: "₹399",
+    image: "images/berserk-tee.jpg",
+    images: [
+      "images/berserk-tee.jpg",
+      "images/void-hoodie.jpg",
+      "images/void-hero.jpg",
+      "images/void-acid-tee.jpg"
+    ],
+    accentColor: "#94172b",
+    tags: ["Dark Fantasy Manga", "300 GSM Loopback", "Crimson Blood Moon"],
+    conceptSummary: "A relentless tribute to dark fantasy manga lore. Guts standing defiant before the crimson blood moon, printed on ultra-heavy 300 GSM charcoal stonewashed cotton with micro-frayed edges.",
+    fabricSpecs: [
+      "300 GSM heavy-grade French Terry cotton",
+      "Distressed mineral wash creating an ash-grey battlefield patina",
+      "Deep crimson and chalk white discharge screenprinting",
+      "Exaggerated drop shoulder tailoring with wide sleeves",
+      "Heavy gauge collar ribbing that will never bacon or sag"
     ],
     seedVotes: 0,
     isFeatured: true
   },
   {
     id: "OF-DRINKING",
-    name: "DRINKING ABOUT YOU BABY TEE",
+    name: "DRINKING ABOUT YOU CRIMSON BABY TEE",
     collection: "THE FEED",
     collectionSlug: "feed",
     category: "Ringer & Baby Tees",
     styleGroup: "ringer",
     fit: "Fitted 90s Cropped Cut",
-    indicativePrice: 1099,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1099,
     currency: "₹",
-    priceLabel: "₹1,099 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/drinking-about-you-tee.jpg",
-    accentColor: "#94172b",
-    tags: ["Baby Tee", "Ribbed Stretch Cotton", "Midnight Crimson"],
-    conceptSummary: "90s riot grrrl minimalism. Rich crimson red stretch baby tee featuring distressed sans-serif block lettering, cropped right above the waistband for midnight diner and basement club energy.",
+    images: [
+      "images/drinking-about-you-tee.jpg",
+      "images/feed-baby-tee.jpg",
+      "images/bite-me-ringer.jpg",
+      "images/drop-feed-tee.jpg"
+    ],
+    accentColor: "#b026ff",
+    tags: ["Indie Sleaze", "Crimson Red", "Bold Typography"],
+    conceptSummary: "Post-punk indie-sleaze uniform. Bold collegiate black lettering across saturated crimson red cotton, cropped right above the waistband for midnight diner and basement club energy.",
     fabricSpecs: [
       "195 GSM combed cotton jersey with 4% elastane stretch",
       "Solid pigment dyed crimson red colorway",
@@ -214,10 +280,18 @@ export const PRODUCTS = [
     category: "Vintage Band Tees",
     styleGroup: "band",
     fit: "Oversized Heavy Skater Fit",
-    indicativePrice: 1799,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1799,
     currency: "₹",
-    priceLabel: "₹1,799 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/metallica-justice-tee.jpg",
+    images: [
+      "images/metallica-justice-tee.jpg",
+      "images/void-hero.jpg",
+      "images/slipknot-tee.jpg",
+      "images/void-longsleeve.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["Thrash Metal 1988", "Lady Justice Graphic", "Full Front Print"],
     conceptSummary: "1988 thrash metal magnum opus. Full-front cracked stone statue of Lady Justice with scales amidst stormy skies and lightning, rendered on heavy faded charcoal cotton.",
@@ -239,10 +313,18 @@ export const PRODUCTS = [
     category: "Heavyweight Tees",
     styleGroup: "grunge",
     fit: "Boxy Sludge Metal Cut",
-    indicativePrice: 1649,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1649,
     currency: "₹",
-    priceLabel: "₹1,649 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/acid-bath-tee.jpg",
+    images: [
+      "images/acid-bath-tee.jpg",
+      "images/void-acid-tee.jpg",
+      "images/berserk-tee.jpg",
+      "images/void-hoodie.jpg"
+    ],
     accentColor: "#94172b",
     tags: ["Sludge Metal", "Blood Red Logo", "Distressed Collar"],
     conceptSummary: "Underground Louisiana sludge metal iconography. Visceral gothic red 'Acid Bath' lettering perched above a haunted sepia portrait, printed on heavily weathered, oil-faded black cotton.",
@@ -264,10 +346,18 @@ export const PRODUCTS = [
     category: "Pop & Meme Tees",
     styleGroup: "meme",
     fit: "Relaxed 70s Heritage Cut",
-    indicativePrice: 1299,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1299,
     currency: "₹",
-    priceLabel: "₹1,299 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/stop-wars-tee.jpg",
+    images: [
+      "images/stop-wars-tee.jpg",
+      "images/drop-feed-tee.jpg",
+      "images/feed-power-tee.jpg",
+      "images/feed-buffering-tee.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["Sci-Fi Parody", "Chocolate Brown", "Weathered Yellow"],
     conceptSummary: "A pacifist parody of interstellar proportions. Distressed weathered golden yellow sci-fi stencil typography printed across deep chocolate brown washed cotton. Pure retro counterculture.",
@@ -289,10 +379,18 @@ export const PRODUCTS = [
     category: "Grunge Band Tees",
     styleGroup: "band",
     fit: "Classic 90s Heavyweight Fit",
-    indicativePrice: 1699,
+    price: 399,
+    indicativePrice: 399,
+    originalPrice: 1699,
     currency: "₹",
-    priceLabel: "₹1,699 (Concept Prototype)",
+    priceLabel: "₹399",
     image: "images/system-down-tee.jpg",
+    images: [
+      "images/system-down-tee.jpg",
+      "images/void-hero.jpg",
+      "images/metallica-justice-tee.jpg",
+      "images/void-acid-tee.jpg"
+    ],
     accentColor: "#b026ff",
     tags: ["Alt Metal 90s", "Distressed Hand Graphic", "Heavy Mineral Wash"],
     conceptSummary: "Alternative metal history. Iconic distressed System of a Down block lettering with the eerie outstretched reaching hand graphic printed in bone-white ink on deep charcoal mineral-wash cotton.",
@@ -328,12 +426,3 @@ export const FITS = [
   "Oversized Heavy Skater Fit",
   "Relaxed 70s Heritage Cut"
 ];
-
-export function getProductById(id) {
-  return PRODUCTS.find(p => p.id === id) || null;
-}
-
-export function getFeaturedProducts() {
-  return PRODUCTS.filter(p => p.isFeatured);
-}
-
