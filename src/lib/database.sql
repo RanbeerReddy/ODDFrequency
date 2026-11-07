@@ -58,6 +58,44 @@ to authenticated
 using (true);
 
 
+-- 1B. APPAREL BUY ORDERS & CUSTOMER DATABASE TABLE
+-- ------------------------------------------------------------------------------
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid(),
+  order_id text not null unique,
+  email text not null,
+  product_id text not null,
+  product_name text not null,
+  size text not null default 'L',
+  quantity integer not null default 1,
+  price numeric not null default 399,
+  status text not null default 'CONFIRMED',
+  created_at timestamptz not null default now(),
+  constraint order_email_format check (
+    length(email) <= 320 and email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+  )
+);
+
+create index if not exists idx_orders_email on public.orders (email);
+create index if not exists idx_orders_product on public.orders (product_id);
+
+alter table public.orders enable row level security;
+revoke all on table public.orders from public, anon;
+grant insert on table public.orders to anon, authenticated;
+grant select on table public.orders to authenticated;
+
+drop policy if exists "Allow public orders insert" on public.orders;
+create policy "Allow public orders insert"
+on public.orders
+for insert
+to anon, authenticated
+with check (
+  length(email) <= 320
+  and email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+);
+
+
+
 -- 2. ITEM VOTES TABLE (ANONYMOUS DEMAND VALIDATION)
 -- ------------------------------------------------------------------------------
 create table if not exists public.item_votes (
